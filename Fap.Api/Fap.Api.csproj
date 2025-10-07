@@ -8,6 +8,7 @@
 	<ItemGroup>
 		<!-- Dùng gói OpenAPI tương ứng .NET 8 -->
 		<PackageReference Include="AutoMapper" Version="15.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.*" />
 		<!-- EF Tools 8.x -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.*">
@@ -21,9 +22,5 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Fap.Domain\Fap.Domain.csproj" />
 		<ProjectReference Include="..\Fap.Infrastructure\Fap.Infrastructure.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Services\" />
 	</ItemGroup>
 </Project>

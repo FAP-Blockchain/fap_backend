@@ -14,7 +14,7 @@ namespace Fap.Domain.Entities
         [Required, MaxLength(150)] public string FullName { get; set; }
         [Required, MaxLength(150)] public string Email { get; set; }
         [Required] public string PasswordHash { get; set; }
-        [MaxLength(30)] public string StudentCode { get; set; } // nếu là SV
+        [MaxLength(30)] public string? StudentCode { get; set; } // nếu là SV
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
