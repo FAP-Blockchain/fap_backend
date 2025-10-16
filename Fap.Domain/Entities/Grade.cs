@@ -13,8 +13,8 @@ namespace Fap.Domain.Entities
     {
         [Key] public Guid Id { get; set; }
 
-        [Required] public Guid UserId { get; set; }
-        [ForeignKey(nameof(UserId))] public User User { get; set; }
+        [Required] public Guid StudentId { get; set; }
+        [ForeignKey(nameof(StudentId))] public Student Student { get; set; }
 
         [Required] public Guid SubjectId { get; set; }
         [ForeignKey(nameof(SubjectId))] public Subject Subject { get; set; }

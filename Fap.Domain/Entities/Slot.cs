@@ -13,8 +13,8 @@ namespace Fap.Domain.Entities
     {
         [Key] public Guid Id { get; set; }
 
-        [Required] public Guid SubjectId { get; set; }
-        [ForeignKey(nameof(SubjectId))] public Subject Subject { get; set; }
+        [Required] public Guid ClassId { get; set; }
+        [ForeignKey(nameof(ClassId))] public Class Class { get; set; }
 
         [Required] public DateTime Date { get; set; } // Ngày học cụ thể
         

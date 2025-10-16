@@ -15,8 +15,6 @@ namespace Fap.Domain.Entities
         [Required, MaxLength(80)] public string Name { get; set; } // e.g., Spring 2026
         [Required] public DateTime StartDate { get; set; }
         [Required] public DateTime EndDate { get; set; }
-        [Required] public DateTime RegistrationStart { get; set; }
-        [Required] public DateTime RegistrationEnd { get; set; }
 
         public virtual ICollection<Subject> Subjects { get; set; }
     }

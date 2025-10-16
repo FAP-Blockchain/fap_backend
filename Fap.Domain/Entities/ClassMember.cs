@@ -16,8 +16,8 @@ namespace Fap.Domain.Entities
         [Required] public Guid ClassId { get; set; }
         [ForeignKey(nameof(ClassId))] public Class Class { get; set; }
 
-        [Required] public Guid UserId { get; set; }
-        [ForeignKey(nameof(UserId))] public User User { get; set; }
+        [Required] public Guid StudentId { get; set; }
+        [ForeignKey(nameof(StudentId))] public Student Student { get; set; }
 
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
     }

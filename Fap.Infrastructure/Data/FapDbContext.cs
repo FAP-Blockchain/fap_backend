@@ -1,172 +1,196 @@
-﻿using Fap.Domain.Entities;
+using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 
-namespace Fap.Infrastructure.Data;
-
-public class FapDbContext : DbContext
+namespace Fap.Infrastructure.Data
 {
-    public FapDbContext(DbContextOptions<FapDbContext> options) : base(options) { }
-
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<Permission> Permissions { get; set; }
-    public DbSet<User> Users { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
-    public DbSet<Semester> Semesters { get; set; }
-    public DbSet<Subject> Subjects { get; set; }
-    public DbSet<Class> Classes { get; set; }
-    public DbSet<ClassMember> ClassMembers { get; set; }
-    public DbSet<Enroll> Enrolls { get; set; }
-    public DbSet<Slot> Slots { get; set; }
-    public DbSet<TimeSlot> TimeSlots { get; set; }
-    public DbSet<Attendance> Attendances { get; set; }
-    public DbSet<GradeComponent> GradeComponents { get; set; }
-    public DbSet<Grade> Grades { get; set; }
-    public DbSet<StudentTranscript> StudentTranscripts { get; set; }
-    public DbSet<CertificateTemplate> CertificateTemplates { get; set; }
-    public DbSet<Credential> Credentials { get; set; }
-    public DbSet<ActionLog> ActionLogs { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class FapDbContext : DbContext
     {
-        base.OnModelCreating(modelBuilder);
+        public FapDbContext(DbContextOptions<FapDbContext> options)
+            : base(options)
+        { }
 
-        // ========== USER ==========
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<ClassMember> ClassMembers { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<SubjectCriteria> SubjectCriteria { get; set; }
+        public DbSet<Grade> Grades { get; set; }
+        public DbSet<GradeComponent> GradeComponents { get; set; }
+        public DbSet<StudentTranscript> StudentTranscripts { get; set; }
+        public DbSet<Credential> Credentials { get; set; }
+        public DbSet<CertificateTemplate> CertificateTemplates { get; set; }
+        public DbSet<Attendance> Attendances { get; set; }
+        public DbSet<Slot> Slots { get; set; }
+        public DbSet<TimeSlot> TimeSlots { get; set; }
+        public DbSet<Enroll> Enrolls { get; set; }
+        public DbSet<ActionLog> ActionLogs { get; set; }
+        public DbSet<University> Universities { get; set; }
+        public DbSet<Semester> Semesters { get; set; }
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Class>()
-            .HasOne(c => c.Teacher)
-            .WithMany()
-            .HasForeignKey(c => c.TeacherUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // User <-> Student/Teacher (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.User)
+                .WithOne(u => u.Student)
+                .HasForeignKey<Student>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        // ========== SUBJECT / SEMESTER ==========
-        modelBuilder.Entity<Subject>()
-            .HasIndex(s => s.SubjectCode)
-            .IsUnique();
+            modelBuilder.Entity<Teacher>()
+                .HasOne(t => t.User)
+                .WithOne(u => u.Teacher)
+                .HasForeignKey<Teacher>(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Subject>()
-            .HasOne(s => s.Semester)
-            .WithMany(se => se.Subjects)
-            .HasForeignKey(s => s.SemesterId)
-            .OnDelete(DeleteBehavior.Cascade);
+            // Role <-> Permission
+            modelBuilder.Entity<Role>()
+                .HasMany(r => r.Permissions)
+                .WithOne(p => p.Role)
+                .HasForeignKey(p => p.RoleId);
 
-        // ========== SLOT / TIMESLOT ==========
-        // Slot thuộc Subject, có 1 TimeSlot (giờ học)
-        modelBuilder.Entity<Slot>()
-            .HasOne(s => s.Subject)
-            .WithMany(sub => sub.Slots)
-            .HasForeignKey(s => s.SubjectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            // User <-> Role
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Role)
+                .WithMany(r => r.Users)
+                .HasForeignKey(u => u.RoleId);
 
-        modelBuilder.Entity<Slot>()
-            .HasOne(s => s.TimeSlot)
-            .WithMany(ts => ts.Slots)
-            .HasForeignKey(s => s.TimeSlotId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // ClassMember composite key
+            modelBuilder.Entity<ClassMember>()
+                .HasKey(cm => new { cm.ClassId, cm.StudentId });
 
-        // TimeSlot có tên như Slot 1, Slot 2,...
-        modelBuilder.Entity<TimeSlot>()
-            .HasIndex(t => t.Name)
-            .IsUnique();
+            // ClassMember relationships (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<ClassMember>()
+                .HasOne(cm => cm.Class)
+                .WithMany(c => c.Members)
+                .HasForeignKey(cm => cm.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        // ========== CLASS ==========
-        modelBuilder.Entity<Class>()
-            .HasIndex(c => c.ClassCode)
-            .IsUnique();
+            modelBuilder.Entity<ClassMember>()
+                .HasOne(cm => cm.Student)
+                .WithMany(s => s.ClassMembers)
+                .HasForeignKey(cm => cm.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Class>()
-            .HasOne(c => c.Teacher)
-            .WithMany()
-            .HasForeignKey(c => c.TeacherUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Subject <-> SubjectCriteria
+            modelBuilder.Entity<Subject>()
+                .HasMany(s => s.SubjectCriterias)
+                .WithOne(sc => sc.Subject)
+                .HasForeignKey(sc => sc.SubjectId);
 
+            // Slot <-> Attendance (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Slot>()
+                .HasMany(s => s.Attendances)
+                .WithOne(a => a.Slot)
+                .HasForeignKey(a => a.SlotId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        // ========== ATTENDANCE ==========
-        modelBuilder.Entity<Attendance>()
-            .HasOne(a => a.User)
-            .WithMany(u => u.Attendances)
-            .HasForeignKey(a => a.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Subject <-> Grade
+            modelBuilder.Entity<Subject>()
+                .HasMany(s => s.Grades)
+                .WithOne(g => g.Subject)
+                .HasForeignKey(g => g.SubjectId);
 
-       
-        modelBuilder.Entity<Attendance>()
-            .HasOne(a => a.Subject)
-            .WithMany(s => s.Attendances)
-            .HasForeignKey(a => a.SubjectId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Student <-> Grade
+            modelBuilder.Entity<Student>()
+                .HasMany(s => s.Grades)
+                .WithOne(g => g.Student)
+                .HasForeignKey(g => g.StudentId);
 
-        
-        modelBuilder.Entity<Attendance>()
-            .HasOne(a => a.Slot)
-            .WithMany(s => s.Attendances)
-            .HasForeignKey(a => a.SlotId)
-            .OnDelete(DeleteBehavior.Cascade);
+            // Teacher <-> Class
+            modelBuilder.Entity<Teacher>()
+                .HasMany(t => t.Classes)
+                .WithOne(c => c.Teacher)
+                .HasForeignKey(c => c.TeacherUserId);
 
+            // Student <-> Enroll (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Student>()
+                .HasMany(s => s.Enrolls)
+                .WithOne(e => e.Student)
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        // ========== GRADE ==========
-        modelBuilder.Entity<Grade>()
-            .HasOne(g => g.User)
-            .WithMany(u => u.Grades)
-            .HasForeignKey(g => g.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Class <-> Enroll
+            modelBuilder.Entity<Class>()
+                .HasMany(c => c.Enrolls)
+                .WithOne(e => e.Class)
+                .HasForeignKey(e => e.ClassId);
 
-        modelBuilder.Entity<Grade>()
-            .HasOne(g => g.Subject)
-            .WithMany(s => s.Grades)
-            .HasForeignKey(g => g.SubjectId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // User <-> RefreshToken
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.RefreshTokens)
+                .WithOne(rt => rt.User)
+                .HasForeignKey(rt => rt.UserId);
 
-        modelBuilder.Entity<Grade>()
-            .HasOne(g => g.GradeComponent)
-            .WithMany(gc => gc.Grades)
-            .HasForeignKey(g => g.GradeComponentId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // TimeSlot <-> Slot
+            modelBuilder.Entity<Slot>()
+                .HasOne(s => s.TimeSlot)
+                .WithMany(ts => ts.Slots)
+                .HasForeignKey(s => s.TimeSlotId);
 
-        // ========== TRANSCRIPT ==========
-        modelBuilder.Entity<StudentTranscript>()
-            .HasOne(t => t.User)
-            .WithMany(u => u.Transcripts)
-            .HasForeignKey(t => t.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Class <-> Slot
+            modelBuilder.Entity<Slot>()
+                .HasOne(s => s.Class)
+                .WithMany(c => c.Slots)
+                .HasForeignKey(s => s.ClassId);
 
-        modelBuilder.Entity<StudentTranscript>()
-            .HasOne(t => t.Subject)
-            .WithMany(s => s.Transcripts)
-            .HasForeignKey(t => t.SubjectId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Credential <-> Student
+            modelBuilder.Entity<Credential>()
+                .HasOne(c => c.Student)
+                .WithMany(s => s.Credentials)
+                .HasForeignKey(c => c.StudentId);
 
+            // Credential <-> CertificateTemplate
+            modelBuilder.Entity<Credential>()
+                .HasOne(c => c.CertificateTemplate)
+                .WithMany(ct => ct.Credentials)
+                .HasForeignKey(c => c.CertificateTemplateId);
 
-        // ========== CREDENTIAL ==========
-        modelBuilder.Entity<Credential>()
-            .HasIndex(c => c.CredentialId)
-            .IsUnique();
+            // ActionLog <-> User
+            modelBuilder.Entity<ActionLog>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.ActionLogs)
+                .HasForeignKey(a => a.UserId);
 
-        modelBuilder.Entity<Credential>()
-            .HasOne(c => c.User)
-            .WithMany(u => u.Credentials)
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Attendance <-> Student (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Student)
+                .WithMany(s => s.Attendances)
+                .HasForeignKey(a => a.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Credential>()
-            .HasOne(c => c.CertificateTemplate)
-            .WithMany(ct => ct.Credentials)
-            .HasForeignKey(c => c.CertificateTemplateId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // Attendance <-> Slot (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Slot)
+                .WithMany(s => s.Attendances)
+                .HasForeignKey(a => a.SlotId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        // ========== ACTION LOG ==========
-        modelBuilder.Entity<ActionLog>()
-            .HasOne(al => al.User)
-            .WithMany(u => u.ActionLogs)
-            .HasForeignKey(al => al.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            // Enroll <-> Class (Restrict to prevent cascade path errors)
+            modelBuilder.Entity<Enroll>()
+                .HasOne(e => e.Class)
+                .WithMany(c => c.Enrolls)
+                .HasForeignKey(e => e.ClassId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<ActionLog>()
-            .HasOne(al => al.Credential)
-            .WithMany()
-            .HasForeignKey(al => al.CredentialId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // StudentTranscript <-> Student
+            modelBuilder.Entity<StudentTranscript>()
+                .HasOne(st => st.Student)
+                .WithMany(s => s.Transcripts)
+                .HasForeignKey(st => st.StudentId);
+
+            // StudentTranscript <-> Subject
+            modelBuilder.Entity<StudentTranscript>()
+                .HasOne(st => st.Subject)
+                .WithMany(s => s.Transcripts)
+                .HasForeignKey(st => st.SubjectId);
+        }
     }
 }

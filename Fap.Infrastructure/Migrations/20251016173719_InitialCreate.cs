@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Fap.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Databasev1 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,7 +18,7 @@ namespace Fap.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    StorageUri = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                    TemplateFileUrl = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -57,9 +57,7 @@ namespace Fap.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RegistrationStart = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RegistrationEnd = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -78,6 +76,25 @@ namespace Fap.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TimeSlots", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Universities",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    ShortName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Website = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Universities", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -101,30 +118,6 @@ namespace Fap.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StudentCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Users_Roles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Subjects",
                 columns: table => new
                 {
@@ -132,7 +125,8 @@ namespace Fap.Infrastructure.Migrations
                     SubjectCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     SubjectName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Credits = table.Column<int>(type: "int", nullable: false),
-                    SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UniversityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -143,35 +137,63 @@ namespace Fap.Infrastructure.Migrations
                         principalTable: "Semesters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Subjects_Universities_UniversityId",
+                        column: x => x.UniversityId,
+                        principalTable: "Universities",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Credentials",
+                name: "Users",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CredentialId = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
-                    IPFSHash = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    IssuedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsRevoked = table.Column<bool>(type: "bit", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CertificateTemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UniversityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Credentials", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Credentials_CertificateTemplates_CertificateTemplateId",
-                        column: x => x.CertificateTemplateId,
-                        principalTable: "CertificateTemplates",
+                        name: "FK_Users_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Credentials_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_Users_Universities_UniversityId",
+                        column: x => x.UniversityId,
+                        principalTable: "Universities",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubjectCriteria",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    MinScore = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsMandatory = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubjectCriteria", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SubjectCriteria_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -195,41 +217,76 @@ namespace Fap.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Classes",
+                name: "Students",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClassCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TeacherUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    GPA = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Classes", x => x.Id);
+                    table.PrimaryKey("PK_Students", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Classes_Subjects_SubjectId",
-                        column: x => x.SubjectId,
-                        principalTable: "Subjects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Classes_Users_TeacherUserId",
-                        column: x => x.TeacherUserId,
+                        name: "FK_Students_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Teachers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TeacherCode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    HireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Specialization = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teachers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Classes_Users_UserId",
+                        name: "FK_Teachers_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Credentials",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CredentialId = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    IPFSHash = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    FileUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    IssuedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsRevoked = table.Column<bool>(type: "bit", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CertificateTemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Credentials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Classes_Users_UserId1",
-                        column: x => x.UserId1,
-                        principalTable: "Users",
-                        principalColumn: "Id");
+                        name: "FK_Credentials_CertificateTemplates_CertificateTemplateId",
+                        column: x => x.CertificateTemplateId,
+                        principalTable: "CertificateTemplates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Credentials_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -237,7 +294,7 @@ namespace Fap.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GradeComponentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Score = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -252,45 +309,19 @@ namespace Fap.Infrastructure.Migrations
                         column: x => x.GradeComponentId,
                         principalTable: "GradeComponents",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Grades_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Grades_Subjects_SubjectId",
                         column: x => x.SubjectId,
                         principalTable: "Subjects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Grades_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Slots",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TimeSlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Slots", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Slots_Subjects_SubjectId",
-                        column: x => x.SubjectId,
-                        principalTable: "Subjects",
-                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Slots_TimeSlots_TimeSlotId",
-                        column: x => x.TimeSlotId,
-                        principalTable: "TimeSlots",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -298,29 +329,63 @@ namespace Fap.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FinalScore = table.Column<decimal>(type: "decimal(4,2)", nullable: true),
                     FinalLetter = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
                     Passed = table.Column<bool>(type: "bit", nullable: false),
                     AcademicPhase = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Credits = table.Column<int>(type: "int", nullable: false),
+                    IsGraduated = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_StudentTranscripts", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_StudentTranscripts_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_StudentTranscripts_Subjects_SubjectId",
                         column: x => x.SubjectId,
                         principalTable: "Subjects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Classes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClassCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TeacherUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UniversityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Classes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StudentTranscripts_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_Classes_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Classes_Teachers_TeacherUserId",
+                        column: x => x.TeacherUserId,
+                        principalTable: "Teachers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Classes_Universities_UniversityId",
+                        column: x => x.UniversityId,
+                        principalTable: "Universities",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -341,8 +406,7 @@ namespace Fap.Infrastructure.Migrations
                         name: "FK_ActionLogs_Credentials_CredentialId",
                         column: x => x.CredentialId,
                         principalTable: "Credentials",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ActionLogs_Users_UserId",
                         column: x => x.UserId,
@@ -355,14 +419,14 @@ namespace Fap.Infrastructure.Migrations
                 name: "ClassMembers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ClassMembers", x => x.Id);
+                    table.PrimaryKey("PK_ClassMembers", x => new { x.ClassId, x.StudentId });
                     table.ForeignKey(
                         name: "FK_ClassMembers_Classes_ClassId",
                         column: x => x.ClassId,
@@ -370,11 +434,11 @@ namespace Fap.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ClassMembers_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_ClassMembers_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -382,7 +446,7 @@ namespace Fap.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false)
@@ -395,13 +459,44 @@ namespace Fap.Infrastructure.Migrations
                         column: x => x.ClassId,
                         principalTable: "Classes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Enrolls_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_Enrolls_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Slots",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TimeSlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Slots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Slots_Classes_ClassId",
+                        column: x => x.ClassId,
+                        principalTable: "Classes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Slots_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Slots_TimeSlots_TimeSlotId",
+                        column: x => x.TimeSlotId,
+                        principalTable: "TimeSlots",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -409,7 +504,7 @@ namespace Fap.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsPresent = table.Column<bool>(type: "bit", nullable: false),
@@ -423,19 +518,19 @@ namespace Fap.Infrastructure.Migrations
                         column: x => x.SlotId,
                         principalTable: "Slots",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Attendances_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Attendances_Subjects_SubjectId",
                         column: x => x.SubjectId,
                         principalTable: "Subjects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Attendances_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -454,20 +549,14 @@ namespace Fap.Infrastructure.Migrations
                 column: "SlotId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Attendances_StudentId",
+                table: "Attendances",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Attendances_SubjectId",
                 table: "Attendances",
                 column: "SubjectId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attendances_UserId",
-                table: "Attendances",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Classes_ClassCode",
-                table: "Classes",
-                column: "ClassCode",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_SubjectId",
@@ -480,24 +569,14 @@ namespace Fap.Infrastructure.Migrations
                 column: "TeacherUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Classes_UserId",
+                name: "IX_Classes_UniversityId",
                 table: "Classes",
-                column: "UserId");
+                column: "UniversityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Classes_UserId1",
-                table: "Classes",
-                column: "UserId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClassMembers_ClassId",
+                name: "IX_ClassMembers_StudentId",
                 table: "ClassMembers",
-                column: "ClassId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClassMembers_UserId",
-                table: "ClassMembers",
-                column: "UserId");
+                column: "StudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Credentials_CertificateTemplateId",
@@ -505,15 +584,9 @@ namespace Fap.Infrastructure.Migrations
                 column: "CertificateTemplateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Credentials_CredentialId",
+                name: "IX_Credentials_StudentId",
                 table: "Credentials",
-                column: "CredentialId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Credentials_UserId",
-                table: "Credentials",
-                column: "UserId");
+                column: "StudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrolls_ClassId",
@@ -521,9 +594,9 @@ namespace Fap.Infrastructure.Migrations
                 column: "ClassId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrolls_UserId",
+                name: "IX_Enrolls_StudentId",
                 table: "Enrolls",
-                column: "UserId");
+                column: "StudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Grades_GradeComponentId",
@@ -531,14 +604,14 @@ namespace Fap.Infrastructure.Migrations
                 column: "GradeComponentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Grades_StudentId",
+                table: "Grades",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Grades_SubjectId",
                 table: "Grades",
                 column: "SubjectId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Grades_UserId",
-                table: "Grades",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Permissions_RoleId",
@@ -551,6 +624,11 @@ namespace Fap.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Slots_ClassId",
+                table: "Slots",
+                column: "ClassId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Slots_SubjectId",
                 table: "Slots",
                 column: "SubjectId");
@@ -561,14 +639,25 @@ namespace Fap.Infrastructure.Migrations
                 column: "TimeSlotId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Students_UserId",
+                table: "Students",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudentTranscripts_StudentId",
+                table: "StudentTranscripts",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StudentTranscripts_SubjectId",
                 table: "StudentTranscripts",
                 column: "SubjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StudentTranscripts_UserId",
-                table: "StudentTranscripts",
-                column: "UserId");
+                name: "IX_SubjectCriteria_SubjectId",
+                table: "SubjectCriteria",
+                column: "SubjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Subjects_SemesterId",
@@ -576,27 +665,25 @@ namespace Fap.Infrastructure.Migrations
                 column: "SemesterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Subjects_SubjectCode",
+                name: "IX_Subjects_UniversityId",
                 table: "Subjects",
-                column: "SubjectCode",
-                unique: true);
+                column: "UniversityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_Name",
-                table: "TimeSlots",
-                column: "Name",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
-                table: "Users",
-                column: "Email",
+                name: "IX_Teachers_UserId",
+                table: "Teachers",
+                column: "UserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleId",
                 table: "Users",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_UniversityId",
+                table: "Users",
+                column: "UniversityId");
         }
 
         /// <inheritdoc />
@@ -627,13 +714,13 @@ namespace Fap.Infrastructure.Migrations
                 name: "StudentTranscripts");
 
             migrationBuilder.DropTable(
+                name: "SubjectCriteria");
+
+            migrationBuilder.DropTable(
                 name: "Credentials");
 
             migrationBuilder.DropTable(
                 name: "Slots");
-
-            migrationBuilder.DropTable(
-                name: "Classes");
 
             migrationBuilder.DropTable(
                 name: "GradeComponents");
@@ -642,19 +729,31 @@ namespace Fap.Infrastructure.Migrations
                 name: "CertificateTemplates");
 
             migrationBuilder.DropTable(
+                name: "Students");
+
+            migrationBuilder.DropTable(
+                name: "Classes");
+
+            migrationBuilder.DropTable(
                 name: "TimeSlots");
 
             migrationBuilder.DropTable(
                 name: "Subjects");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Teachers");
 
             migrationBuilder.DropTable(
                 name: "Semesters");
 
             migrationBuilder.DropTable(
+                name: "Users");
+
+            migrationBuilder.DropTable(
                 name: "Roles");
+
+            migrationBuilder.DropTable(
+                name: "Universities");
         }
     }
 }

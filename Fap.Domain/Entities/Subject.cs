@@ -31,8 +31,8 @@ namespace Fap.Domain.Entities
         // ⬇️ Thêm các navigation cần cho DbContext
         public virtual ICollection<Class> Classes { get; set; }
         public virtual ICollection<Slot> Slots { get; set; }
-        public virtual ICollection<Attendance> Attendances { get; set; }
         public virtual ICollection<Grade> Grades { get; set; }
         public virtual ICollection<StudentTranscript> Transcripts { get; set; }
+        public virtual ICollection<SubjectCriteria> SubjectCriterias { get; set; }
     }
 }

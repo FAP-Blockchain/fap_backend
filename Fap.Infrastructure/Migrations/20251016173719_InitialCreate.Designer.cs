@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fap.Infrastructure.Migrations
 {
     [DbContext(typeof(FapDbContext))]
-    [Migration("20251007115930_Databasev1")]
-    partial class Databasev1
+    [Migration("20251016173719_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.20")
+                .HasAnnotation("ProductVersion", "8.0.21")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -74,19 +74,19 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<Guid>("SlotId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SubjectId")
+                    b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("SlotId");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("StudentId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("SubjectId");
 
                     b.ToTable("Attendances");
                 });
@@ -107,7 +107,7 @@ namespace Fap.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
-                    b.Property<string>("StorageUri")
+                    b.Property<string>("TemplateFileUrl")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -134,48 +134,37 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<Guid>("TeacherUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("UserId1")
+                    b.Property<Guid?>("UniversityId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ClassCode")
-                        .IsUnique();
 
                     b.HasIndex("SubjectId");
 
                     b.HasIndex("TeacherUserId");
 
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
+                    b.HasIndex("UniversityId");
 
                     b.ToTable("Classes");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.ClassMember", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("ClassId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClassId")
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.HasKey("ClassId", "StudentId");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("UserId");
+                    b.HasIndex("StudentId");
 
                     b.ToTable("ClassMembers");
                 });
@@ -194,6 +183,11 @@ namespace Fap.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("IPFSHash")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -205,17 +199,14 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<DateTime>("IssuedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CertificateTemplateId");
 
-                    b.HasIndex("CredentialId")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
+                    b.HasIndex("StudentId");
 
                     b.ToTable("Credentials");
                 });
@@ -235,14 +226,14 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ClassId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("StudentId");
 
                     b.ToTable("Enrolls");
                 });
@@ -264,22 +255,22 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<decimal>("Score")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("GradeComponentId");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("StudentId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("SubjectId");
 
                     b.ToTable("Grades");
                 });
@@ -382,12 +373,6 @@ namespace Fap.Infrastructure.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
-                    b.Property<DateTime>("RegistrationEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("RegistrationStart")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -402,10 +387,13 @@ namespace Fap.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("SubjectId")
+                    b.Property<Guid?>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TimeSlotId")
@@ -413,11 +401,41 @@ namespace Fap.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClassId");
+
                     b.HasIndex("SubjectId");
 
                     b.HasIndex("TimeSlotId");
 
                     b.ToTable("Slots");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.Student", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("GPA")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("StudentCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.StudentTranscript", b =>
@@ -431,6 +449,9 @@ namespace Fap.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("Credits")
+                        .HasColumnType("int");
+
                     b.Property<string>("FinalLetter")
                         .IsRequired()
                         .HasMaxLength(5)
@@ -439,23 +460,26 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<decimal?>("FinalScore")
                         .HasColumnType("decimal(4,2)");
 
+                    b.Property<bool>("IsGraduated")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("Passed")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("SubjectId")
+                    b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("StudentId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("SubjectId");
 
                     b.ToTable("StudentTranscripts");
                 });
@@ -482,14 +506,84 @@ namespace Fap.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<Guid?>("UniversityId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("SemesterId");
 
-                    b.HasIndex("SubjectCode")
-                        .IsUnique();
+                    b.HasIndex("UniversityId");
 
                     b.ToTable("Subjects");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.SubjectCriteria", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsMandatory")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MinScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("SubjectCriteria");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.Teacher", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Specialization")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TeacherCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Teachers");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.TimeSlot", b =>
@@ -511,10 +605,54 @@ namespace Fap.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
-
                     b.ToTable("TimeSlots");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.University", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ShortName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Website")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Universities");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.User", b =>
@@ -546,17 +684,14 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("StudentCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<Guid?>("UniversityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
-
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("UniversityId");
 
                     b.ToTable("Users");
                 });
@@ -565,8 +700,7 @@ namespace Fap.Infrastructure.Migrations
                 {
                     b.HasOne("Fap.Domain.Entities.Credential", "Credential")
                         .WithMany()
-                        .HasForeignKey("CredentialId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CredentialId");
 
                     b.HasOne("Fap.Domain.Entities.User", "User")
                         .WithMany("ActionLogs")
@@ -584,26 +718,26 @@ namespace Fap.Infrastructure.Migrations
                     b.HasOne("Fap.Domain.Entities.Slot", "Slot")
                         .WithMany("Attendances")
                         .HasForeignKey("SlotId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
+                        .WithMany("Attendances")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fap.Domain.Entities.Subject", "Subject")
-                        .WithMany("Attendances")
+                        .WithMany()
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fap.Domain.Entities.User", "User")
-                        .WithMany("Attendances")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Slot");
 
-                    b.Navigation("Subject");
+                    b.Navigation("Student");
 
-                    b.Navigation("User");
+                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Class", b =>
@@ -614,19 +748,15 @@ namespace Fap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", "Teacher")
-                        .WithMany()
+                    b.HasOne("Fap.Domain.Entities.Teacher", "Teacher")
+                        .WithMany("Classes")
                         .HasForeignKey("TeacherUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", null)
-                        .WithMany("CreatedClasses")
-                        .HasForeignKey("UserId");
-
-                    b.HasOne("Fap.Domain.Entities.User", null)
-                        .WithMany("TaughtClasses")
-                        .HasForeignKey("UserId1");
+                    b.HasOne("Fap.Domain.Entities.University", null)
+                        .WithMany("Classes")
+                        .HasForeignKey("UniversityId");
 
                     b.Navigation("Subject");
 
@@ -641,15 +771,15 @@ namespace Fap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", "User")
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
                         .WithMany("ClassMembers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Class");
 
-                    b.Navigation("User");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Credential", b =>
@@ -657,18 +787,18 @@ namespace Fap.Infrastructure.Migrations
                     b.HasOne("Fap.Domain.Entities.CertificateTemplate", "CertificateTemplate")
                         .WithMany("Credentials")
                         .HasForeignKey("CertificateTemplateId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", "User")
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
                         .WithMany("Credentials")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CertificateTemplate");
 
-                    b.Navigation("User");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Enroll", b =>
@@ -676,18 +806,18 @@ namespace Fap.Infrastructure.Migrations
                     b.HasOne("Fap.Domain.Entities.Class", "Class")
                         .WithMany("Enrolls")
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", "User")
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
                         .WithMany("Enrolls")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Class");
 
-                    b.Navigation("User");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Grade", b =>
@@ -695,26 +825,26 @@ namespace Fap.Infrastructure.Migrations
                     b.HasOne("Fap.Domain.Entities.GradeComponent", "GradeComponent")
                         .WithMany("Grades")
                         .HasForeignKey("GradeComponentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
+                        .WithMany("Grades")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Fap.Domain.Entities.Subject", "Subject")
                         .WithMany("Grades")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fap.Domain.Entities.User", "User")
-                        .WithMany("Grades")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("GradeComponent");
 
-                    b.Navigation("Subject");
+                    b.Navigation("Student");
 
-                    b.Navigation("User");
+                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Permission", b =>
@@ -741,39 +871,53 @@ namespace Fap.Infrastructure.Migrations
 
             modelBuilder.Entity("Fap.Domain.Entities.Slot", b =>
                 {
-                    b.HasOne("Fap.Domain.Entities.Subject", "Subject")
+                    b.HasOne("Fap.Domain.Entities.Class", "Class")
                         .WithMany("Slots")
-                        .HasForeignKey("SubjectId")
+                        .HasForeignKey("ClassId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Fap.Domain.Entities.Subject", null)
+                        .WithMany("Slots")
+                        .HasForeignKey("SubjectId");
+
                     b.HasOne("Fap.Domain.Entities.TimeSlot", "TimeSlot")
                         .WithMany("Slots")
-                        .HasForeignKey("TimeSlotId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TimeSlotId");
 
-                    b.Navigation("Subject");
+                    b.Navigation("Class");
 
                     b.Navigation("TimeSlot");
                 });
 
+            modelBuilder.Entity("Fap.Domain.Entities.Student", b =>
+                {
+                    b.HasOne("Fap.Domain.Entities.User", "User")
+                        .WithOne("Student")
+                        .HasForeignKey("Fap.Domain.Entities.Student", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fap.Domain.Entities.StudentTranscript", b =>
                 {
+                    b.HasOne("Fap.Domain.Entities.Student", "Student")
+                        .WithMany("Transcripts")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Fap.Domain.Entities.Subject", "Subject")
                         .WithMany("Transcripts")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fap.Domain.Entities.User", "User")
-                        .WithMany("Transcripts")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Student");
 
                     b.Navigation("Subject");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Subject", b =>
@@ -784,7 +928,33 @@ namespace Fap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Fap.Domain.Entities.University", null)
+                        .WithMany("Subjects")
+                        .HasForeignKey("UniversityId");
+
                     b.Navigation("Semester");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.SubjectCriteria", b =>
+                {
+                    b.HasOne("Fap.Domain.Entities.Subject", "Subject")
+                        .WithMany("SubjectCriterias")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.Teacher", b =>
+                {
+                    b.HasOne("Fap.Domain.Entities.User", "User")
+                        .WithOne("Teacher")
+                        .HasForeignKey("Fap.Domain.Entities.Teacher", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.User", b =>
@@ -794,6 +964,10 @@ namespace Fap.Infrastructure.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Fap.Domain.Entities.University", null)
+                        .WithMany("Users")
+                        .HasForeignKey("UniversityId");
 
                     b.Navigation("Role");
                 });
@@ -808,6 +982,8 @@ namespace Fap.Infrastructure.Migrations
                     b.Navigation("Enrolls");
 
                     b.Navigation("Members");
+
+                    b.Navigation("Slots");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.GradeComponent", b =>
@@ -832,33 +1008,11 @@ namespace Fap.Infrastructure.Migrations
                     b.Navigation("Attendances");
                 });
 
-            modelBuilder.Entity("Fap.Domain.Entities.Subject", b =>
+            modelBuilder.Entity("Fap.Domain.Entities.Student", b =>
                 {
-                    b.Navigation("Attendances");
-
-                    b.Navigation("Classes");
-
-                    b.Navigation("Grades");
-
-                    b.Navigation("Slots");
-
-                    b.Navigation("Transcripts");
-                });
-
-            modelBuilder.Entity("Fap.Domain.Entities.TimeSlot", b =>
-                {
-                    b.Navigation("Slots");
-                });
-
-            modelBuilder.Entity("Fap.Domain.Entities.User", b =>
-                {
-                    b.Navigation("ActionLogs");
-
                     b.Navigation("Attendances");
 
                     b.Navigation("ClassMembers");
-
-                    b.Navigation("CreatedClasses");
 
                     b.Navigation("Credentials");
 
@@ -866,11 +1020,52 @@ namespace Fap.Infrastructure.Migrations
 
                     b.Navigation("Grades");
 
-                    b.Navigation("RefreshTokens");
+                    b.Navigation("Transcripts");
+                });
 
-                    b.Navigation("TaughtClasses");
+            modelBuilder.Entity("Fap.Domain.Entities.Subject", b =>
+                {
+                    b.Navigation("Classes");
+
+                    b.Navigation("Grades");
+
+                    b.Navigation("Slots");
+
+                    b.Navigation("SubjectCriterias");
 
                     b.Navigation("Transcripts");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.Teacher", b =>
+                {
+                    b.Navigation("Classes");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.TimeSlot", b =>
+                {
+                    b.Navigation("Slots");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.University", b =>
+                {
+                    b.Navigation("Classes");
+
+                    b.Navigation("Subjects");
+
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Fap.Domain.Entities.User", b =>
+                {
+                    b.Navigation("ActionLogs");
+
+                    b.Navigation("RefreshTokens");
+
+                    b.Navigation("Student")
+                        .IsRequired();
+
+                    b.Navigation("Teacher")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

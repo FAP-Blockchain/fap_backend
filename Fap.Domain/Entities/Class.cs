@@ -26,12 +26,14 @@ namespace Fap.Domain.Entities
         [Required]
         public Guid TeacherUserId { get; set; }
         [ForeignKey(nameof(TeacherUserId))]
-        public User Teacher { get; set; }
+        public Teacher Teacher { get; set; }
 
         // ✅ Sinh viên trong lớp
         public virtual ICollection<ClassMember> Members { get; set; }
 
         // ✅ Đăng ký lớp
         public virtual ICollection<Enroll> Enrolls { get; set; }
+        // ✅ Buổi học trong lớp
+        public virtual ICollection<Slot> Slots { get; set; }
     }
 }
