@@ -11,10 +11,14 @@ namespace Fap.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
+        private readonly IOtpService _otpService;
+        private readonly IEmailService _emailService;
 
-        public AuthController(AuthService authService)
+        public AuthController(AuthService authService, IOtpService otpService, IEmailService emailService)
         {
             _authService = authService;
+            _otpService = otpService;
+            _emailService = emailService;
         }
 
         // 🔑 LOGIN
@@ -38,15 +42,123 @@ namespace Fap.Api.Controllers
             return Ok(new { message = "Logged out successfully" });
         }
 
-        // 🔁 RESET PASSWORD
-        [HttpPost("reset-password")]
+        // 📧 SEND OTP
+        [HttpPost("send-otp")]
         [AllowAnonymous]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest req)
+        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         {
-            var success = await _authService.ResetPasswordAsync(req);
+            try
+            {
+                var otp = await _otpService.GenerateOtpAsync(request.Email, request.Purpose);
+                await _emailService.SendOtpEmailAsync(request.Email, otp, request.Purpose);
+                
+                return Ok(new { message = "OTP sent successfully to your email" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Failed to send OTP: {ex.Message}" });
+            }
+        }
+
+        // ✅ VERIFY OTP
+        [HttpPost("verify-otp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+        {
+            var isValid = await _otpService.ValidateOtpAsync(request.Email, request.Code, request.Purpose);
+            
+            if (!isValid)
+                return BadRequest(new { message = "Invalid or expired OTP" });
+            
+            return Ok(new { message = "OTP verified successfully" });
+        }
+
+        //// 🔁 RESET PASSWORD (Old method - deprecated)
+        //[HttpPost("reset-password")]
+        //[AllowAnonymous]
+        //[Obsolete("Use reset-password-with-otp instead")]
+        //public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest req)
+        //{
+        //    var success = await _authService.ResetPasswordAsync(req);
+        //    if (!success)
+        //        return NotFound(new { message = "Email not found" });
+        //    return Ok(new { message = "Password reset successfully" });
+        //}
+
+        // 🔁 RESET PASSWORD WITH OTP (New method)
+        [HttpPost("reset-password-with-otp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPasswordWithOtp([FromBody] ResetPasswordWithOtpRequest request)
+        {
+            // Validate OTP first
+            var isValidOtp = await _otpService.ValidateOtpAsync(request.Email, request.OtpCode, "PasswordReset");
+            if (!isValidOtp)
+                return BadRequest(new { message = "Invalid or expired OTP" });
+
+            // Reset password
+            var resetRequest = new ResetPasswordRequest
+            {
+                Email = request.Email,
+                NewPassword = request.NewPassword,
+                ConfirmPassword = request.ConfirmPassword
+            };
+
+            var success = await _authService.ResetPasswordAsync(resetRequest);
             if (!success)
-                return NotFound(new { message = "Email not found" });
+                return NotFound(new { message = "User not found" });
+
             return Ok(new { message = "Password reset successfully" });
+        }
+
+        // ✅ ĐĂNG KÝ 1 TÀI KHOẢN (Chỉ Admin)
+        [HttpPost("register")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
+        {
+            var result = await _authService.RegisterUserAsync(request);
+            
+            if (!result.Success)
+                return BadRequest(result);
+
+            // Send welcome email
+            try
+            {
+                await _emailService.SendWelcomeEmailAsync(request.Email, request.FullName, request.Password);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the registration
+                Console.WriteLine($"⚠️ Failed to send welcome email: {ex.Message}");
+            }
+            
+            return CreatedAtAction(nameof(Register), new { id = result.UserId }, result);
+        }
+
+        // ✅ ĐĂNG KÝ NHIỀU TÀI KHOẢN CÙNG LÚC (Chỉ Admin)
+        [HttpPost("register/bulk")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> BulkRegister([FromBody] BulkRegisterRequest request)
+        {
+            var result = await _authService.BulkRegisterAsync(request);
+            
+            // Send welcome emails for successful registrations
+            foreach (var userResult in result.Results.Where(r => r.Success))
+            {
+                var userRequest = request.Users.First(u => u.Email == userResult.Email);
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(userRequest.Email, userRequest.FullName, userRequest.Password);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Failed to send welcome email to {userRequest.Email}: {ex.Message}");
+                }
+            }
+            
+            if (result.FailureCount == result.TotalRequested)
+                return BadRequest(result);
+            
+            return Ok(result);
         }
     }
 }

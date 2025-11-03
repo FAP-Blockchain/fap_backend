@@ -1,6 +1,5 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Fap.Infrastructure.Data
 {
@@ -19,7 +18,7 @@ namespace Fap.Infrastructure.Data
         public DbSet<SubjectCriteria> SubjectCriteria { get; set; }
         public DbSet<Grade> Grades { get; set; }
         public DbSet<GradeComponent> GradeComponents { get; set; }
-        public DbSet<StudentTranscript> StudentTranscripts { get; set; }
+        public DbSet<StudentRoadmap> StudentRoadmaps { get; set; }
         public DbSet<Credential> Credentials { get; set; }
         public DbSet<CertificateTemplate> CertificateTemplates { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
@@ -27,15 +26,35 @@ namespace Fap.Infrastructure.Data
         public DbSet<TimeSlot> TimeSlots { get; set; }
         public DbSet<Enroll> Enrolls { get; set; }
         public DbSet<ActionLog> ActionLogs { get; set; }
-        public DbSet<University> Universities { get; set; }
         public DbSet<Semester> Semesters { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Otp> Otps { get; set; }  // ✅ NEW
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ==================== DECIMAL PRECISION ====================
+            // Grade.Score
+            modelBuilder.Entity<Grade>()
+                .Property(g => g.Score)
+                .HasPrecision(4, 2); // 0.00 - 99.99
+
+            // Student.GPA
+            modelBuilder.Entity<Student>()
+                .Property(s => s.GPA)
+                .HasPrecision(4, 2); // 0.00 - 99.99
+
+            // SubjectCriteria.MinScore
+            modelBuilder.Entity<SubjectCriteria>()
+                .Property(sc => sc.MinScore)
+                .HasPrecision(4, 2); // 0.00 - 99.99
+
+            // StudentRoadmap.FinalScore already has [Column(TypeName = "decimal(4,2)")]
+
+            // ==================== RELATIONSHIPS ====================
 
             // User <-> Student/Teacher (Restrict to prevent cascade path errors)
             modelBuilder.Entity<Student>()
@@ -141,6 +160,13 @@ namespace Fap.Infrastructure.Data
                 .WithMany(c => c.Slots)
                 .HasForeignKey(s => s.ClassId);
 
+            // Slot <-> SubstituteTeacher (Restrict to prevent cascade)
+            modelBuilder.Entity<Slot>()
+                .HasOne(s => s.SubstituteTeacher)
+                .WithMany()
+                .HasForeignKey(s => s.SubstituteTeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Credential <-> Student
             modelBuilder.Entity<Credential>()
                 .HasOne(c => c.Student)
@@ -180,17 +206,36 @@ namespace Fap.Infrastructure.Data
                 .HasForeignKey(e => e.ClassId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // StudentTranscript <-> Student
-            modelBuilder.Entity<StudentTranscript>()
-                .HasOne(st => st.Student)
-                .WithMany(s => s.Transcripts)
-                .HasForeignKey(st => st.StudentId);
+            // ==================== STUDENT ROADMAP ====================
+            // StudentRoadmap <-> Student (🔴 RESTRICT to prevent cascade cycle)
+            modelBuilder.Entity<StudentRoadmap>()
+                .HasOne(sr => sr.Student)
+                .WithMany(s => s.Roadmaps)
+                .HasForeignKey(sr => sr.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // StudentTranscript <-> Subject
-            modelBuilder.Entity<StudentTranscript>()
-                .HasOne(st => st.Subject)
-                .WithMany(s => s.Transcripts)
-                .HasForeignKey(st => st.SubjectId);
+            // StudentRoadmap <-> Subject (🔴 RESTRICT to prevent cascade cycle)
+            modelBuilder.Entity<StudentRoadmap>()
+                .HasOne(sr => sr.Subject)
+                .WithMany(s => s.Roadmaps)
+                .HasForeignKey(sr => sr.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // StudentRoadmap <-> Semester (🔴 RESTRICT to prevent cascade cycle)
+            modelBuilder.Entity<StudentRoadmap>()
+                .HasOne(sr => sr.Semester)
+                .WithMany()
+                .HasForeignKey(sr => sr.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ OTP Configuration
+            modelBuilder.Entity<Otp>()
+                .HasIndex(o => new { o.Email, o.Code, o.Purpose })
+                .HasDatabaseName("IX_Otp_Email_Code_Purpose");
+
+            modelBuilder.Entity<Otp>()
+                .HasIndex(o => o.ExpiresAt)
+                .HasDatabaseName("IX_Otp_ExpiresAt");
         }
     }
 }

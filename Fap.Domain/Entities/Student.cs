@@ -21,14 +21,20 @@ namespace Fap.Domain.Entities
         public DateTime EnrollmentDate { get; set; } // Ngày nhập học
         public decimal GPA { get; set; }  // Điểm trung bình
 
+        // 🆕 Trạng thái tốt nghiệp
+        public bool IsGraduated { get; set; } = false;
+        
+        // 🆕 Ngày tốt nghiệp
+        public DateTime? GraduationDate { get; set; }
 
+        // Navigation
         public User User { get; set; }  // Quan hệ với User
-
-        public virtual ICollection<StudentTranscript> Transcripts { get; set; }
         public virtual ICollection<Grade> Grades { get; set; }
-        public virtual ICollection<ClassMember> ClassMembers { get; set; }
         public virtual ICollection<Enroll> Enrolls { get; set; }
         public virtual ICollection<Attendance> Attendances { get; set; }
+
+        public virtual ICollection<ClassMember> ClassMembers { get; set; }
         public virtual ICollection<Credential> Credentials { get; set; }
+        public virtual ICollection<StudentRoadmap> Roadmaps { get; set; } // 🆕
     }
 }

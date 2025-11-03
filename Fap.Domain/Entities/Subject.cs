@@ -32,7 +32,7 @@ namespace Fap.Domain.Entities
         public virtual ICollection<Class> Classes { get; set; }
         public virtual ICollection<Slot> Slots { get; set; }
         public virtual ICollection<Grade> Grades { get; set; }
-        public virtual ICollection<StudentTranscript> Transcripts { get; set; }
+        public virtual ICollection<StudentRoadmap> Roadmaps { get; set; }
         public virtual ICollection<SubjectCriteria> SubjectCriterias { get; set; }
     }
 }

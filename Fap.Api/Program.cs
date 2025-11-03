@@ -2,6 +2,7 @@
 using Fap.Api.Mappings;
 using Fap.Api.Services;
 using Fap.Domain.Repositories;
+using Fap.Domain.Settings;
 using Fap.Infrastructure.Data;
 using Fap.Infrastructure.Data.Seed;
 using Fap.Infrastructure.Repositories;
@@ -19,12 +20,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// ✅ Swagger cấu hình JWT (paste token không cần chữ Bearer)
+// ✅ Swagger cấu hình JWT
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "FAP API",
+        Title = "UAP API",
         Version = "v1",
         Description = "University Academic & Student Management on Blockchain"
     });
@@ -32,11 +33,11 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nhập **JWT token** vào đây."
+        Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below."
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -67,12 +68,22 @@ builder.Services.AddDbContext<FapDbContext>(opt =>
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();  
+builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();  
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IOtpRepository, OtpRepository>();  
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ==================================================
-// 🔹 SERVICES & AUTOMAPPER
+// 🔹 SETTINGS & SERVICES
 // ==================================================
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<OtpSettings>(builder.Configuration.GetSection("OtpSettings"));
+
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOtpService, OtpService>();  
+
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(AutoMapperProfile)));
 
 // ==================================================
@@ -118,8 +129,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("➡️ Skipping migration, continuing app startup...");
     }
 }
-
-
 
 // ==================================================
 // 🔹 MIDDLEWARE PIPELINE

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Fap.Domain.Repositories
@@ -10,6 +7,11 @@ namespace Fap.Domain.Repositories
     {
         IUserRepository Users { get; }
         IRefreshTokenRepository RefreshTokens { get; }
+        IStudentRepository Students { get; }
+        ITeacherRepository Teachers { get; }
+        IRoleRepository Roles { get; }
+        IOtpRepository Otps { get; }  // ✅ NEW
+        
         Task<int> SaveChangesAsync();
     }
 }

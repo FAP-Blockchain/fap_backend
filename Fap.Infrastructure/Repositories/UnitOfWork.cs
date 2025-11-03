@@ -1,10 +1,5 @@
 ﻿using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fap.Infrastructure.Repositories
 {
@@ -14,12 +9,20 @@ namespace Fap.Infrastructure.Repositories
 
         public IUserRepository Users { get; }
         public IRefreshTokenRepository RefreshTokens { get; }
+        public IStudentRepository Students { get; }
+        public ITeacherRepository Teachers { get; }
+        public IRoleRepository Roles { get; }
+        public IOtpRepository Otps { get; }  // ✅ NEW
 
         public UnitOfWork(FapDbContext context)
         {
             _context = context;
             Users = new UserRepository(context);
             RefreshTokens = new RefreshTokenRepository(context);
+            Students = new StudentRepository(context);
+            Teachers = new TeacherRepository(context);
+            Roles = new RoleRepository(context);
+            Otps = new OtpRepository(context);  // ✅ NEW
         }
 
         public async Task<int> SaveChangesAsync()

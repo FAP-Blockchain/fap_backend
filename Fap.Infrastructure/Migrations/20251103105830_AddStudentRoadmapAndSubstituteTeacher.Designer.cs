@@ -4,6 +4,7 @@ using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fap.Infrastructure.Migrations
 {
     [DbContext(typeof(FapDbContext))]
-    partial class FapDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251103105830_AddStudentRoadmapAndSubstituteTeacher")]
+    partial class AddStudentRoadmapAndSubstituteTeacher
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,50 +288,6 @@ namespace Fap.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("GradeComponents");
-                });
-
-            modelBuilder.Entity("Fap.Domain.Entities.Otp", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Purpose")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UsedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresAt")
-                        .HasDatabaseName("IX_Otp_ExpiresAt");
-
-                    b.HasIndex("Email", "Code", "Purpose")
-                        .HasDatabaseName("IX_Otp_Email_Code_Purpose");
-
-                    b.ToTable("Otps");
                 });
 
             modelBuilder.Entity("Fap.Domain.Entities.Permission", b =>

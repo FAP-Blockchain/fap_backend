@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Fap.Api.Filters
@@ -7,23 +8,28 @@ namespace Fap.Api.Filters
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            if (operation.Security == null)
-                operation.Security = new List<OpenApiSecurityRequirement>();
+            var hasAuthorize = context.MethodInfo.DeclaringType != null &&
+                (context.MethodInfo.DeclaringType.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any()
+                 || context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any());
 
-            // Thêm header Authorization mặc định
-            var jwtAuthScheme = new OpenApiSecurityScheme
+            if (hasAuthorize)
             {
-                Reference = new OpenApiReference
+                operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });
+                operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden" });
+
+                var bearerScheme = new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            };
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                };
 
-            operation.Security.Add(new OpenApiSecurityRequirement
-            {
-                [jwtAuthScheme] = Array.Empty<string>()
-            });
+                operation.Security = new List<OpenApiSecurityRequirement>
+                {
+                    new OpenApiSecurityRequirement
+                    {
+                        [ bearerScheme ] = new string[] { }
+                    }
+                };
+            }
         }
     }
 }
