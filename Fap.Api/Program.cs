@@ -61,7 +61,7 @@ builder.Services.AddSwaggerGen(c =>
 // 🔹 DATABASE & REPOSITORIES
 // ==================================================
 builder.Services.AddDbContext<FapDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Repository pattern
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -101,13 +101,25 @@ builder.Services.AddAuthorization();
 // ==================================================
 var app = builder.Build();
 
-// Apply migrations & seed data
+// Apply migrations & seed data safely
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FapDbContext>();
-    await db.Database.MigrateAsync();
-    await DataSeeder.SeedAsync(db);
+    try
+    {
+        Console.WriteLine("🔄 Applying migrations...");
+        await db.Database.MigrateAsync();
+        await DataSeeder.SeedAsync(db);
+        Console.WriteLine("✅ Database migration & seeding done!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Database migration failed: {ex.Message}");
+        Console.WriteLine("➡️ Skipping migration, continuing app startup...");
+    }
 }
+
+
 
 // ==================================================
 // 🔹 MIDDLEWARE PIPELINE
