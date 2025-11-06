@@ -1,6 +1,9 @@
 using AutoMapper;
+using Fap.Api.Interfaces;
+using Fap.Domain.DTOs.Common;
 using Fap.Domain.DTOs.Teacher;
 using Fap.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,15 +11,59 @@ using System.Threading.Tasks;
 
 namespace Fap.Api.Services
 {
-    public class TeacherService
+    public class TeacherService : ITeacherService
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+        private readonly ILogger<TeacherService> _logger;
 
-        public TeacherService(IUnitOfWork uow, IMapper mapper)
+        public TeacherService(IUnitOfWork uow, IMapper mapper, ILogger<TeacherService> logger)
         {
             _uow = uow;
             _mapper = mapper;
+            _logger = logger;
+        }
+
+        // ========== GET TEACHERS WITH PAGINATION ==========
+        public async Task<PagedResult<TeacherDto>> GetTeachersAsync(GetTeachersRequest request)
+        {
+            try
+            {
+                var (teachers, totalCount) = await _uow.Teachers.GetPagedTeachersAsync(
+                    request.Page,
+                    request.PageSize,
+                    request.SearchTerm,
+                    request.Specialization,
+                    request.IsActive,
+                    request.SortBy,
+                    request.SortOrder
+                );
+
+                var teacherDtos = teachers.Select(t => new TeacherDto
+                {
+                    Id = t.Id,
+                    TeacherCode = t.TeacherCode,
+                    FullName = t.User?.FullName ?? "N/A",
+                    Email = t.User?.Email ?? "N/A",
+                    HireDate = t.HireDate,
+                    Specialization = t.Specialization ?? "N/A",
+                    PhoneNumber = t.PhoneNumber ?? "N/A",
+                    IsActive = t.User?.IsActive ?? false,
+                    TotalClasses = t.Classes?.Count ?? 0
+                }).ToList();
+
+                return new PagedResult<TeacherDto>(
+                    teacherDtos,
+                    totalCount,
+                    request.Page,
+                    request.PageSize
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting teachers: {ex.Message}");
+                throw;
+            }
         }
 
         // ========== GET ALL TEACHERS ==========
@@ -41,38 +88,47 @@ namespace Fap.Api.Services
         // ========== GET TEACHER BY ID WITH DETAILS ==========
         public async Task<TeacherDetailDto?> GetTeacherByIdAsync(Guid id)
         {
-            var teacher = await _uow.Teachers.GetByIdWithDetailsAsync(id);
-            if (teacher == null) return null;
-
-            return new TeacherDetailDto
+            try
             {
-                Id = teacher.Id,
-                TeacherCode = teacher.TeacherCode,
-                FullName = teacher.User?.FullName ?? "N/A",
-                Email = teacher.User?.Email ?? "N/A",
-                HireDate = teacher.HireDate,
-                Specialization = teacher.Specialization ?? "N/A",
-                PhoneNumber = teacher.PhoneNumber ?? "N/A",
-                IsActive = teacher.User?.IsActive ?? false,
-                CreatedAt = teacher.User?.CreatedAt ?? DateTime.MinValue,
-                
-                // Classes
-                Classes = teacher.Classes?.Select(c => new TeachingClassInfo
+                var teacher = await _uow.Teachers.GetByIdWithDetailsAsync(id);
+                if (teacher == null)
+                    return null;
+
+                return new TeacherDetailDto
                 {
-                    ClassId = c.Id,
-                    ClassCode = c.ClassCode,
-                    SubjectName = c.Subject?.SubjectName ?? "N/A",
-                    SubjectCode = c.Subject?.SubjectCode ?? "N/A",
-                    Credits = c.Subject?.Credits ?? 0,
-                    SemesterName = c.Subject?.Semester?.Name ?? "N/A",
-                    TotalStudents = c.Members?.Count ?? 0,
-                    TotalSlots = c.Slots?.Count ?? 0
-                }).ToList() ?? new List<TeachingClassInfo>(),
-                
-                // Statistics
-                TotalClasses = teacher.Classes?.Count ?? 0,
-                TotalStudents = teacher.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0
-            };
+                    Id = teacher.Id,
+                    TeacherCode = teacher.TeacherCode,
+                    FullName = teacher.User?.FullName ?? "N/A",
+                    Email = teacher.User?.Email ?? "N/A",
+                    HireDate = teacher.HireDate,
+                    Specialization = teacher.Specialization ?? "N/A",
+                    PhoneNumber = teacher.PhoneNumber ?? "N/A",
+                    IsActive = teacher.User?.IsActive ?? false,
+                    CreatedAt = teacher.User?.CreatedAt ?? DateTime.MinValue,
+                    
+                    // Classes
+                    Classes = teacher.Classes?.Select(c => new TeachingClassInfo
+                    {
+                        ClassId = c.Id,
+                        ClassCode = c.ClassCode,
+                        SubjectName = c.Subject?.SubjectName ?? "N/A",
+                        SubjectCode = c.Subject?.SubjectCode ?? "N/A",
+                        Credits = c.Subject?.Credits ?? 0,
+                        SemesterName = c.Subject?.Semester?.Name ?? "N/A",
+                        TotalStudents = c.Members?.Count ?? 0,
+                        TotalSlots = c.Slots?.Count ?? 0
+                    }).ToList() ?? new List<TeachingClassInfo>(),
+                    
+                    // Statistics
+                    TotalClasses = teacher.Classes?.Count ?? 0,
+                    TotalStudents = teacher.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting teacher {id}: {ex.Message}");
+                throw;
+            }
         }
     }
 }

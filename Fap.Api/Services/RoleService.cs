@@ -1,4 +1,5 @@
 using AutoMapper;
+using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Role;
 using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Fap.Api.Services
 {
-    public class RoleService
+    public class RoleService : IRoleService
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;

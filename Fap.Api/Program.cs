@@ -83,10 +83,11 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.Configure<OtpSettings>(builder.Configuration.GetSection("OtpSettings"));
 
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<StudentService>();  
-builder.Services.AddScoped<TeacherService>();  
+builder.Services.AddScoped<IStudentService, StudentService>();  
+builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOtpService, OtpService>();  
 

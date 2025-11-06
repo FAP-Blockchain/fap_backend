@@ -1,3 +1,4 @@
+using Fap.Api.Interfaces;
 using Fap.Api.Services;
 using Fap.Domain.DTOs.Role;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +14,13 @@ namespace Fap.Api.Controllers
     [Authorize(Roles = "Admin")]
     public class RolesController : ControllerBase
     {
-        private readonly RoleService _roleService;
+        private readonly IRoleService _roleService;
+        private readonly ILogger<RolesController> _logger;
 
-        public RolesController(RoleService roleService)
+        public RolesController(IRoleService roleService, ILogger<RolesController> logger)
         {
             _roleService = roleService;
+            _logger = logger;
         }
 
         // GET /api/roles

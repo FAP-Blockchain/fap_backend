@@ -1,61 +1,61 @@
-using Fap.Api.Services;
+using Fap.Api.Interfaces;
+using Fap.Domain.DTOs.Teacher;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace Fap.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // T?t c? roles ??u có th? truy c?p (có th? customize later)
+    [Authorize] 
     public class TeachersController : ControllerBase
     {
-        private readonly TeacherService _teacherService;
+        private readonly ITeacherService _teacherService;
+        private readonly ILogger<TeachersController> _logger;
 
-        public TeachersController(TeacherService teacherService)
+        public TeachersController(ITeacherService teacherService, ILogger<TeachersController> logger)
         {
             _teacherService = teacherService;
+            _logger = logger;
         }
 
-        // ========================================
-        // ?? API #20: GET /api/teachers
-        // L?y danh sách t?t c? gi?ng viên
-        // ========================================
         [HttpGet]
-        public async Task<IActionResult> GetAllTeachers()
+        public async Task<IActionResult> GetAllTeachers([FromQuery] GetTeachersRequest request)
         {
-            var teachers = await _teacherService.GetAllTeachersAsync();
-            
-            return Ok(new
+            try
             {
-                success = true,
-                data = teachers,
-                count = teachers.Count
-            });
+                var result = await _teacherService.GetTeachersAsync(request);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting teachers: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving teachers" });
+            }
         }
 
-        // ========================================
-        // ?? API #21: GET /api/teachers/{id}
-        // L?y chi ti?t gi?ng viên theo ID
-        // ========================================
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeacherById(Guid id)
         {
-            var teacher = await _teacherService.GetTeacherByIdAsync(id);
-            
-            if (teacher == null)
-                return NotFound(new 
-                { 
-                    success = false,
-                    message = $"Teacher with ID '{id}' not found" 
-                });
-
-            return Ok(new
+            try
             {
-                success = true,
-                data = teacher
-            });
+                var teacher = await _teacherService.GetTeacherByIdAsync(id);
+
+                if (teacher == null)
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"Teacher with ID '{id}' not found"
+                    });
+
+                return Ok(teacher);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting teacher {id}: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving teacher" });
+            }
         }
     }
 }

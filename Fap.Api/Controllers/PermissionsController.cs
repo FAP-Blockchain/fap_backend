@@ -1,4 +1,7 @@
+using Fap.Api.Interfaces;
 using Fap.Api.Services;
+using Fap.Domain.DTOs.Role;
+using Fap.Domain.DTOs.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,52 +14,64 @@ namespace Fap.Api.Controllers
     [Authorize(Roles = "Admin")]  // ? Ch? Admin m?i có quy?n xem permissions
     public class PermissionsController : ControllerBase
     {
-        private readonly RoleService _roleService;
+        private readonly IRoleService _roleService;
+        private readonly IPermissionService _permissionService;
+        private readonly ILogger<PermissionsController> _logger;
 
-        public PermissionsController(RoleService roleService)
+        public PermissionsController(IRoleService roleService, IPermissionService permissionService, ILogger<PermissionsController> logger)
         {
             _roleService = roleService;
+            _permissionService = permissionService;
+            _logger = logger;
         }
 
-        // ========================================
-        // ?? API #11: GET /api/permissions
-        // L?y danh sách t?t c? permissions
-        // ========================================
         [HttpGet]
-        public async Task<IActionResult> GetAllPermissions()
+        public async Task<IActionResult> GetAllPermissions([FromQuery] GetPermissionsRequest request)
         {
-            var permissions = await _roleService.GetAllPermissionsAsync();
+            
 
-            return Ok(new
+            try
             {
-                success = true,
-                data = permissions,
-                count = permissions.Count
-            });
+                var results = await _permissionService.GetPermissionsAsync(request);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting permissions: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving permissions" });
+            }
         }
 
-        // ========================================
-        // ?? GET /api/permissions/role/{roleId}
-        // L?y permissions theo RoleId (Bonus API)
-        // ========================================
+        
         [HttpGet("role/{roleId}")]
         public async Task<IActionResult> GetPermissionsByRoleId(Guid roleId)
         {
-            var role = await _roleService.GetRoleByIdAsync(roleId);
-            
-            if (role == null)
-                return NotFound(new { message = $"Role with ID '{roleId}' not found" });
 
-            var permissions = await _roleService.GetPermissionsByRoleIdAsync(roleId);
-
-            return Ok(new
+            try
             {
-                success = true,
-                roleId = role.Id,
-                roleName = role.Name,
-                permissions = permissions,
-                count = permissions.Count
-            });
+                var role = await _roleService.GetRoleByIdAsync(roleId);
+
+                if (role == null)
+                    return NotFound(new { message = $"Role with ID '{roleId}' not found" });
+
+                var permissions = await _roleService.GetPermissionsByRoleIdAsync(roleId);
+
+                return Ok(new
+                {
+                    success = true,
+                    roleId = role.Id,
+                    roleName = role.Name,
+                    permissions = permissions,
+                    count = permissions.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting permissions {roleId}: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving permissions" });
+            }
         }
+
     }
 }

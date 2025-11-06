@@ -1,61 +1,64 @@
+using Fap.Api.Interfaces;
 using Fap.Api.Services;
+using Fap.Domain.DTOs.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace Fap.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // T?t c? roles ??u có th? truy c?p (có th? customize later)
+    [Authorize] 
     public class StudentsController : ControllerBase
     {
-        private readonly StudentService _studentService;
+        private readonly IStudentService _studentService;
+        private readonly ILogger<StudentsController> _logger;
 
-        public StudentsController(StudentService studentService)
+        public StudentsController(IStudentService studentService, ILogger<StudentsController> logger)
         {
             _studentService = studentService;
+            _logger = logger;
         }
 
-        // ========================================
-        // ?? API #18: GET /api/students
-        // L?y danh sách t?t c? sinh viên
-        // ========================================
         [HttpGet]
-        public async Task<IActionResult> GetAllStudents()
-        {
-            var students = await _studentService.GetAllStudentsAsync();
-            
-            return Ok(new
+        public async Task<IActionResult> GetAllStudents([FromQuery] GetStudentsRequest request)
+
+        { 
+            try
             {
-                success = true,
-                data = students,
-                count = students.Count
-            });
+                var results = await _studentService.GetStudentsAsync(request);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting students: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving students" });
+            }
         }
 
-        // ========================================
-        // ?? API #19: GET /api/students/{id}
-        // L?y chi ti?t sinh viên theo ID
-        // ========================================
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStudentById(Guid id)
         {
-            var student = await _studentService.GetStudentByIdAsync(id);
-            
-            if (student == null)
-                return NotFound(new 
-                { 
-                    success = false,
-                    message = $"Student with ID '{id}' not found" 
-                });
-
-            return Ok(new
+            try
             {
-                success = true,
-                data = student
-            });
+                var student = await _studentService.GetStudentByIdAsync(id);
+
+                if (student == null)
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"Student with ID '{id}' not found"
+                    });
+
+                return Ok(student);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting student {id}: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving student" });
+            }
         }
     }
 }
