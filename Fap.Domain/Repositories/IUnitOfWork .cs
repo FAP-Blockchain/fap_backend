@@ -10,8 +10,11 @@ namespace Fap.Domain.Repositories
         IStudentRepository Students { get; }
         ITeacherRepository Teachers { get; }
         IRoleRepository Roles { get; }
-        IPermissionRepository Permissions { get; }  // ✅ NEW
+        IPermissionRepository Permissions { get; }
         IOtpRepository Otps { get; }
+        IClassRepository Classes { get; }
+        ISubjectRepository Subjects { get; }
+        ITimeSlotRepository TimeSlots { get; }
         
         Task<int> SaveChangesAsync();
     }

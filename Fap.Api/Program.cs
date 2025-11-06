@@ -89,7 +89,9 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IOtpService, OtpService>();  
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IClassService, ClassService>();  // ✅ NEW
+builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();  // ✅ NEW
 
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(AutoMapperProfile)));
 
