@@ -8,7 +8,15 @@ namespace Fap.Infrastructure.Data.Seed
     {
         public static async Task SeedAsync(FapDbContext context)
         {
-            if (await context.Users.AnyAsync()) return;
+            // TEMPORARY: Comment out to force re-seed
+            // if (await context.Users.AnyAsync()) return;
+
+            // Check if TimeSlots exist instead (new data we added)
+            if (await context.TimeSlots.AnyAsync())
+            {
+                Console.WriteLine("Seed data already exists. Skipping seeding.");
+                return;
+            }
 
             var hasher = new PasswordHasher<User>();
 
@@ -19,11 +27,11 @@ namespace Fap.Infrastructure.Data.Seed
 
             var adminUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
             var teacher1UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-            var teacher2UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2");
-            var teacher3UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3");
+            var teacher2UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbe");
+            var teacher3UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbd");
             var student1UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
-            var student2UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc2");
-            var student3UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc3");
+            var student2UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccf");
+            var student3UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccce");
 
             // ========== ROLES ==========
             var adminRole = new Role { Id = adminRoleId, Name = "Admin" };
@@ -162,7 +170,7 @@ namespace Fap.Infrastructure.Data.Seed
             // ========== TEACHERS ==========
             var teacher1Entity = new Teacher
             {
-                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbe"),
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbba"),
                 UserId = teacher1UserId,
                 TeacherCode = "GV001",
                 HireDate = new DateTime(2020, 1, 1),
@@ -172,7 +180,7 @@ namespace Fap.Infrastructure.Data.Seed
 
             var teacher2Entity = new Teacher
             {
-                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbe2"),
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb9"),
                 UserId = teacher2UserId,
                 TeacherCode = "GV002",
                 HireDate = new DateTime(2019, 6, 1),
@@ -182,7 +190,7 @@ namespace Fap.Infrastructure.Data.Seed
 
             var teacher3Entity = new Teacher
             {
-                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbe3"),
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb8"),
                 UserId = teacher3UserId,
                 TeacherCode = "GV003",
                 HireDate = new DateTime(2021, 3, 15),
@@ -195,7 +203,7 @@ namespace Fap.Infrastructure.Data.Seed
             // ========== STUDENTS ==========
             var student1Entity = new Student
             {
-                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccce"),
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccb"),
                 UserId = student1UserId,
                 StudentCode = "SV001",
                 EnrollmentDate = new DateTime(2023, 9, 1),
@@ -204,7 +212,7 @@ namespace Fap.Infrastructure.Data.Seed
 
             var student2Entity = new Student
             {
-                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccce2"),
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccca"),
                 UserId = student2UserId,
                 StudentCode = "SV002",
                 EnrollmentDate = new DateTime(2023, 9, 1),
@@ -213,7 +221,7 @@ namespace Fap.Infrastructure.Data.Seed
 
             var student3Entity = new Student
             {
-                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccce3"),
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc9"),
                 UserId = student3UserId,
                 StudentCode = "SV003",
                 EnrollmentDate = new DateTime(2024, 1, 15),
@@ -554,6 +562,146 @@ namespace Fap.Infrastructure.Data.Seed
             };
 
             await context.Credentials.AddRangeAsync(credentials);
+
+            // ========== TIME SLOTS ==========
+            var timeSlot1 = new TimeSlot
+            {
+                Id = Guid.Parse("01111111-1111-1111-1111-111111111111"),
+                Name = "Slot 1",
+                StartTime = new TimeSpan(7, 30, 0),  // 07:30
+                EndTime = new TimeSpan(9, 15, 0)     // 09:15
+            };
+
+            var timeSlot2 = new TimeSlot
+            {
+                Id = Guid.Parse("02222222-2222-2222-2222-222222222222"),
+                Name = "Slot 2",
+                StartTime = new TimeSpan(9, 30, 0),  // 09:30
+                EndTime = new TimeSpan(11, 15, 0)    // 11:15
+            };
+
+            var timeSlot3 = new TimeSlot
+            {
+                Id = Guid.Parse("03333333-3333-3333-3333-333333333333"),
+                Name = "Slot 3",
+                StartTime = new TimeSpan(12, 30, 0), // 12:30
+                EndTime = new TimeSpan(14, 15, 0)    // 14:15
+            };
+
+            var timeSlot4 = new TimeSlot
+            { 
+                Id = Guid.Parse("04444444-4444-4444-4444-444444444444"),
+                Name = "Slot 4",
+                StartTime = new TimeSpan(14, 30, 0), // 14:30
+                EndTime = new TimeSpan(16, 15, 0)    // 16:15
+            };
+
+            var timeSlot5 = new TimeSlot
+            {
+                Id = Guid.Parse("05555555-5555-5555-5555-555555555555"),
+                Name = "Slot 5",
+                StartTime = new TimeSpan(16, 30, 0), // 16:30
+                EndTime = new TimeSpan(18, 15, 0) // 18:15
+            };
+
+            await context.TimeSlots.AddRangeAsync(timeSlot1, timeSlot2, timeSlot3, timeSlot4, timeSlot5);
+
+            // ========== SLOTS (Class Sessions) ==========
+            var slots = new List<Slot>();
+
+            // ========== Class 1: BC101-A (Blockchain Fundamentals) - Completed course ==========
+            // Week 1
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111111"), ClassId = class1.Id, TimeSlotId = timeSlot1.Id, Date = new DateTime(2024, 1, 15), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111112"), ClassId = class1.Id, TimeSlotId = timeSlot2.Id, Date = new DateTime(2024, 1, 17), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111113"), ClassId = class1.Id, TimeSlotId = timeSlot1.Id, Date = new DateTime(2024, 1, 19), Status = "Completed", SubstituteTeacherId = teacher2Entity.Id, SubstitutionReason = "Giáo viên chính bận công tác" }); // Teacher 2 substitutes for Teacher 1
+  
+            // Week 2
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111114"), ClassId = class1.Id, TimeSlotId = timeSlot1.Id, Date = new DateTime(2024, 1, 22), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111115"), ClassId = class1.Id, TimeSlotId = timeSlot2.Id, Date = new DateTime(2024, 1, 24), Status = "Completed", SubstituteTeacherId = null });
+
+            // Week 3
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111116"), ClassId = class1.Id, TimeSlotId = timeSlot1.Id, Date = new DateTime(2024, 1, 29), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a1111111-1111-1111-1111-111111111117"), ClassId = class1.Id, TimeSlotId = timeSlot2.Id, Date = new DateTime(2024, 1, 31), Status = "Completed", SubstituteTeacherId = null });
+
+            // ========== Class 4: BC202-A (Smart Contract Development) - Active course ==========
+            // Recent slots
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444441"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(-7), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444442"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(-5), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444443"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(-3), Status = "Completed", SubstituteTeacherId = teacher3Entity.Id, SubstitutionReason = "Giáo viên chính nghỉ ốm" }); // Teacher 3 substitutes for Teacher 1
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444444"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(-1), Status = "Completed", SubstituteTeacherId = null });
+          
+            // Upcoming slots
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444445"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(1), Status = "Scheduled", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a4444444-4444-4444-4444-444444444446"), ClassId = class4.Id, TimeSlotId = timeSlot3.Id, Date = DateTime.UtcNow.AddDays(3), Status = "Scheduled", SubstituteTeacherId = null });
+
+            // ========== Class 6: BC303-A (Blockchain Security) - New course ==========
+            slots.Add(new Slot { Id = Guid.Parse("a6666666-6666-6666-6666-666666666661"), ClassId = class6.Id, TimeSlotId = timeSlot4.Id, Date = DateTime.UtcNow.AddDays(-2), Status = "Completed", SubstituteTeacherId = null });
+            slots.Add(new Slot { Id = Guid.Parse("a6666666-6666-6666-6666-666666666662"), ClassId = class6.Id, TimeSlotId = timeSlot4.Id, Date = DateTime.UtcNow.AddDays(2), Status = "Scheduled", SubstituteTeacherId = null });
+
+            await context.Slots.AddRangeAsync(slots);
+
+            // ========== ATTENDANCES ==========
+            var attendances = new List<Attendance>();
+
+            // ========== Class 1 (BC101-A) - Completed Course Attendance ==========
+            // Slot 1 (2024-01-15) - All present
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[0].Id, IsPresent = true, Notes = "On time", RecordedAt = new DateTime(2024, 1, 15, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[0].Id, IsPresent = true, Notes = "On time", RecordedAt = new DateTime(2024, 1, 15, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[0].Id, IsPresent = true, Notes = "On time", RecordedAt = new DateTime(2024, 1, 15, 8, 0, 0) });
+
+            // Slot 2 (2024-01-17) - SV002 absent without excuse
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[1].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 17, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[1].Id, IsPresent = false, Notes = "Không có mặt", IsExcused = false, RecordedAt = new DateTime(2024, 1, 17, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[1].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 17, 10, 0, 0) });
+
+            // Slot 3 (2024-01-19) - SV002 absent with excuse
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[2].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 19, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[2].Id, IsPresent = false, Notes = "Vắng có phép", IsExcused = true, ExcuseReason = "Em bị ốm có giấy bác sĩ xác nhận", RecordedAt = new DateTime(2024, 1, 19, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[2].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 19, 8, 0, 0) });
+
+            // Slot 4 (2024-01-22) - All present
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[3].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 22, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[3].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 22, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[3].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 22, 8, 0, 0) });
+
+            // Slot 5 (2024-01-24) - SV001 late
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[4].Id, IsPresent = true, Notes = "Đến muộn 15 phút", RecordedAt = new DateTime(2024, 1, 24, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[4].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 24, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[4].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 24, 10, 0, 0) });
+
+            // Slot 6 (2024-01-29) - All present
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[5].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 29, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[5].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 29, 8, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[5].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 29, 8, 0, 0) });
+
+            // Slot 7 (2024-01-31) - SV001 absent without excuse
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject1.Id, SlotId = slots[6].Id, IsPresent = false, Notes = "Vắng không lý do", IsExcused = false, RecordedAt = new DateTime(2024, 1, 31, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject1.Id, SlotId = slots[6].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 31, 10, 0, 0) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student3Entity.Id, SubjectId = subject1.Id, SlotId = slots[6].Id, IsPresent = true, Notes = null, RecordedAt = new DateTime(2024, 1, 31, 10, 0, 0) });
+
+            // ========== Class 4 (BC202-A) - Recent Attendance Records ==========
+            // Slot -7 days ago - All present
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject4.Id, SlotId = slots[7].Id, IsPresent = true, Notes = null, RecordedAt = DateTime.UtcNow.AddDays(-7) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject4.Id, SlotId = slots[7].Id, IsPresent = true, Notes = null, RecordedAt = DateTime.UtcNow.AddDays(-7) });
+
+            // Slot -5 days ago - SV002 absent without excuse
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject4.Id, SlotId = slots[8].Id, IsPresent = true, Notes = null, RecordedAt = DateTime.UtcNow.AddDays(-5) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject4.Id, SlotId = slots[8].Id, IsPresent = false, Notes = "Vắng mặt", IsExcused = false, RecordedAt = DateTime.UtcNow.AddDays(-5) });
+
+            // Slot -3 days ago - All present
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject4.Id, SlotId = slots[9].Id, IsPresent = true, Notes = null, RecordedAt = DateTime.UtcNow.AddDays(-3) });
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student2Entity.Id, SubjectId = subject4.Id, SlotId = slots[9].Id, IsPresent = true, Notes = null, RecordedAt = DateTime.UtcNow.AddDays(-3) });
+
+            // Slot -1 day ago - SV001 late, SV002 absent with excuse
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject4.Id, SlotId = slots[10].Id, IsPresent = true, Notes = "Đến muộn 10 phút", RecordedAt = DateTime.UtcNow.AddDays(-1) });
+            attendances.Add(new Attendance { Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), StudentId = student2Entity.Id, SubjectId = subject4.Id, SlotId = slots[10].Id, IsPresent = false, Notes = "Vắng có xin phép", IsExcused = true, ExcuseReason = "Em có việc gia đình đột xuất, em xin phép nghỉ buổi học này", RecordedAt = DateTime.UtcNow.AddDays(-1) });
+
+            // ========== Class 6 (BC303-A) - New Course Attendance ==========
+            // Slot -2 days ago - First class, SV003 absent
+            attendances.Add(new Attendance { Id = Guid.NewGuid(), StudentId = student1Entity.Id, SubjectId = subject5.Id, SlotId = slots[13].Id, IsPresent = true, Notes = "First class", RecordedAt = DateTime.UtcNow.AddDays(-2) });
+            attendances.Add(new Attendance { Id = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"), StudentId = student3Entity.Id, SubjectId = subject5.Id, SlotId = slots[13].Id, IsPresent = false, Notes = "Vắng buổi đầu", IsExcused = false, RecordedAt = DateTime.UtcNow.AddDays(-2) });
+
+            await context.Attendances.AddRangeAsync(attendances);
 
             await context.SaveChangesAsync();
         }

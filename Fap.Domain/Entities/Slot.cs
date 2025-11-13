@@ -30,7 +30,7 @@ namespace Fap.Domain.Entities
 
         // 🆕 Lý do thay đổi giáo viên
         [MaxLength(500)]
-        public string SubstitutionReason { get; set; }
+        public string? SubstitutionReason { get; set; }
 
         // 🆕 Trạng thái slot
         [MaxLength(20)]
@@ -38,7 +38,7 @@ namespace Fap.Domain.Entities
 
         // 🆕 Ghi chú
         [MaxLength(500)]
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

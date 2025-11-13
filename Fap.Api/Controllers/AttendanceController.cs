@@ -1,0 +1,176 @@
+﻿using Fap.Api.Interfaces;
+using Fap.Domain.DTOs.Attendance;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace Fap.Api.Controllers
+{
+    /// <summary>
+    /// Attendance Management API - Quản lý điểm danh sinh viên
+    /// </summary>
+    [Route("api/attendance")]
+    [ApiController]
+    [Authorize]
+    public class AttendanceController : ControllerBase
+    {
+        private readonly IAttendanceService _attendanceService;
+
+        public AttendanceController(IAttendanceService attendanceService)
+        {
+            _attendanceService = attendanceService;
+        }
+
+        /// <summary>
+        /// POST /api/attendance - Teacher takes attendance for a specific slot
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> TakeAttendance([FromBody] TakeAttendanceRequest request)
+        {
+            try
+            {
+                // Get teacher user ID from claims
+                var teacherUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+
+                // Check authorization
+                if (!await _attendanceService.CanTakeAttendanceAsync(request.SlotId, teacherUserId))
+                {
+                    return Forbid();
+                }
+
+                var result = await _attendanceService.TakeAttendanceAsync(request);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Attendance taken successfully",
+                    data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred while taking attendance", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/attendance/{id} - Get attendance details by ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetAttendanceById(Guid id)
+        {
+            try
+            {
+                var result = await _attendanceService.GetAttendanceByIdAsync(id);
+                if (result == null)
+                {
+                    return NotFound(new { success = false, message = $"Attendance with ID {id} not found" });
+                }
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// PUT /api/attendance/{id} - Update an existing attendance record
+        /// </summary>
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> UpdateAttendance(Guid id, [FromBody] UpdateAttendanceRequest request)
+        {
+            try
+            {
+                var result = await _attendanceService.UpdateAttendanceAsync(id, request);
+                if (result == null)
+                {
+                    return NotFound(new { success = false, message = $"Attendance with ID {id} not found" });
+                }
+                return Ok(new
+                {
+                    success = true,
+                    message = "Attendance updated successfully",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred while updating attendance", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/attendance/{id}/excuse - Student requests excuse for absence
+        /// </summary>
+        [HttpPost("{id}/excuse")]
+        [Authorize(Roles = "Student,Admin")]
+        public async Task<IActionResult> ExcuseAbsence(Guid id, [FromBody] ExcuseAbsenceRequest request)
+        {
+            try
+            {
+                // Get student user ID from claims
+                var studentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+
+                // Check authorization (student can only excuse their own attendance)
+                if (User.IsInRole("Student"))
+                {
+                    if (!await _attendanceService.CanExcuseAbsenceAsync(id, studentUserId))
+                    {
+                        return Forbid();
+                    }
+                }
+
+                var result = await _attendanceService.ExcuseAbsenceAsync(id, request);
+                if (result == null)
+                {
+                    return NotFound(new { success = false, message = $"Attendance with ID {id} not found" });
+                }
+                return Ok(new
+                {
+                    success = true,
+                    message = "Excuse request submitted successfully",
+                    data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/attendance/filter - Get filtered attendance records with pagination
+        /// </summary>
+        [HttpGet("filter")]
+        public async Task<IActionResult> GetAttendancesByFilter([FromQuery] AttendanceFilterRequest filter)
+        {
+            try
+            {
+                var result = await _attendanceService.GetAttendancesByFilterAsync(filter);
+                return Ok(new
+                {
+                    success = true,
+                    data = result,
+                    pageNumber = filter.PageNumber,
+                    pageSize = filter.PageSize
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            }
+        }
+    }
+}

@@ -19,6 +19,8 @@ namespace Fap.Domain.Repositories
         IEnrollRepository Enrolls { get; }
         IGradeRepository Grades { get; }
         IGradeComponentRepository GradeComponents { get; }
+        IAttendanceRepository Attendances { get; }
+        ISlotRepository Slots { get; }
         
         Task<int> SaveChangesAsync();
         void ClearChangeTracker();

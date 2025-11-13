@@ -23,6 +23,15 @@ namespace Fap.Domain.Entities
         [ForeignKey(nameof(SlotId))] public Slot Slot { get; set; }
 
         public bool IsPresent { get; set; }
+        
+        [MaxLength(500)]
+        public string? Notes { get; set; }
+        
+        public bool IsExcused { get; set; } = false;
+    
+        [MaxLength(1000)]
+        public string? ExcuseReason { get; set; }
+        
         public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
     }
 }

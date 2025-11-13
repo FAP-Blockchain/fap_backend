@@ -81,6 +81,7 @@ builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
 builder.Services.AddScoped<IEnrollRepository, EnrollRepository>();
 builder.Services.AddScoped<IGradeRepository, GradeRepository>();
 builder.Services.AddScoped<IGradeComponentRepository, GradeComponentRepository>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ==================================================
@@ -101,13 +102,13 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<IBlockchainService, BlockchainService>(); // ✅ NEW
-builder.Services.AddScoped<IClassService, ClassService>();
-builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<ISemesterService, SemesterService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<IGradeComponentService, GradeComponentService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ISlotService, SlotService>();
 
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(AutoMapperProfile)));
 

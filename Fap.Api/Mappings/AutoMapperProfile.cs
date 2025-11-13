@@ -8,6 +8,8 @@ using Fap.Domain.DTOs.TimeSlot;
 using Fap.Domain.DTOs.Subject;
 using Fap.Domain.DTOs.Semester;
 using Fap.Domain.DTOs.Enrollment;
+using Fap.Domain.DTOs.Attendance;
+using Fap.Domain.DTOs.Slot;
 using Fap.Domain.Entities;
 
 namespace Fap.Api.Mappings
@@ -36,8 +38,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.StudentCode))
-                .ForMember(dest => dest.EnrollmentDate, opt => opt.MapFrom(src =>
-                    src.EnrollmentDate ?? DateTime.UtcNow))
+                .ForMember(dest => dest.EnrollmentDate, opt => opt.MapFrom(src => src.EnrollmentDate ?? DateTime.UtcNow))
                 .ForMember(dest => dest.GPA, opt => opt.MapFrom(src => 0m))
                 .ForMember(dest => dest.IsGraduated, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.GraduationDate, opt => opt.Ignore())
@@ -53,8 +54,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.TeacherCode))
-                .ForMember(dest => dest.HireDate, opt => opt.MapFrom(src =>
-                    src.HireDate ?? DateTime.UtcNow))
+                .ForMember(dest => dest.HireDate, opt => opt.MapFrom(src => src.HireDate ?? DateTime.UtcNow))
                 .ForMember(dest => dest.Specialization, opt => opt.MapFrom(src => src.Specialization))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.User, opt => opt.Ignore())
@@ -92,10 +92,8 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name))
-                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src =>
-                    src.Student != null ? src.Student.StudentCode : null))
-                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src =>
-                    src.Teacher != null ? src.Teacher.TeacherCode : null));
+                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student != null ? src.Student.StudentCode : null))
+                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.TeacherCode : null));
 
             // ======================================================================
             // STUDENT MAPPINGS
@@ -111,10 +109,8 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.IsGraduated, opt => opt.MapFrom(src => src.IsGraduated))
                 .ForMember(dest => dest.GraduationDate, opt => opt.MapFrom(src => src.GraduationDate))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
-                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count : 0))
-                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src =>
-                    src.ClassMembers != null ? src.ClassMembers.Count : 0));
+                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count : 0))
+                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.ClassMembers != null ? src.ClassMembers.Count : 0));
 
             CreateMap<Student, StudentDetailDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -127,29 +123,14 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.GraduationDate, opt => opt.MapFrom(src => src.GraduationDate))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt))
-                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count : 0))
-                .ForMember(dest => dest.ApprovedEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count(e => e.IsApproved) : 0))
-                .ForMember(dest => dest.PendingEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count(e => !e.IsApproved) : 0))
-                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src =>
-                    src.ClassMembers != null ? src.ClassMembers.Count : 0))
-                .ForMember(dest => dest.TotalGrades, opt => opt.MapFrom(src =>
-                    src.Grades != null ? src.Grades.Count : 0))
-                .ForMember(dest => dest.TotalAttendances, opt => opt.MapFrom(src =>
-                    src.Attendances != null ? src.Attendances.Count : 0))
+                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count : 0))
+                .ForMember(dest => dest.ApprovedEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count(e => e.IsApproved) : 0))
+                .ForMember(dest => dest.PendingEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count(e => !e.IsApproved) : 0))
+                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.ClassMembers != null ? src.ClassMembers.Count : 0))
+                .ForMember(dest => dest.TotalGrades, opt => opt.MapFrom(src => src.Grades != null ? src.Grades.Count : 0))
+                .ForMember(dest => dest.TotalAttendances, opt => opt.MapFrom(src => src.Attendances != null ? src.Attendances.Count : 0))
                 .ForMember(dest => dest.Enrollments, opt => opt.MapFrom(src => src.Enrolls))
                 .ForMember(dest => dest.CurrentClasses, opt => opt.MapFrom(src => src.ClassMembers));
-
-            // Enroll -> EnrollmentInfo
-            CreateMap<Enroll, EnrollmentInfo>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Class.Subject.SubjectName))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher.User.FullName))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(src => src.RegisteredAt))
-                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved));
 
             // ======================================================================
             // TEACHER MAPPINGS
@@ -164,8 +145,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Specialization, opt => opt.MapFrom(src => src.Specialization))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
-                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src =>
-                    src.Classes != null ? src.Classes.Count : 0));
+                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.Classes != null ? src.Classes.Count : 0));
 
             CreateMap<Teacher, TeacherDetailDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -177,196 +157,83 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt))
-                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src =>
-                    src.Classes != null ? src.Classes.Count : 0))
-                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src =>
-                    src.Classes != null
+                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.Classes != null ? src.Classes.Count : 0))
+                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src => src.Classes != null
                         ? src.Classes.Sum(c => c.Members != null ? c.Members.Count : 0)
                         : 0))
                 .ForMember(dest => dest.Classes, opt => opt.MapFrom(src => src.Classes));
 
-            CreateMap<Class, TeachingClassInfo>()
-                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.ClassCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject.SubjectName))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject.SubjectCode))
-                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Subject.Credits))
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject.Semester.Name))
-                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src =>
-                    src.Members != null ? src.Members.Count : 0))
-                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count : 0));
+            // ======================================================================
+            // SLOT MAPPINGS
+            // ======================================================================
+
+            CreateMap<Slot, SlotDto>()
+                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassCode : null))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Class != null && src.Class.Subject != null ? src.Class.Subject.SubjectName : null))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class != null && src.Class.Teacher != null && src.Class.Teacher.User != null ? src.Class.Teacher.User.FullName : null))
+                .ForMember(dest => dest.TimeSlotName, opt => opt.MapFrom(src => src.TimeSlot != null ? src.TimeSlot.Name : null))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.TimeSlot != null ? src.TimeSlot.StartTime : (TimeSpan?)null))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.TimeSlot != null ? src.TimeSlot.EndTime : (TimeSpan?)null))
+                .ForMember(dest => dest.SubstituteTeacherName, opt => opt.MapFrom(src => src.SubstituteTeacher != null && src.SubstituteTeacher.User != null ? src.SubstituteTeacher.User.FullName : null))
+                .ForMember(dest => dest.HasAttendance, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalAttendances, opt => opt.Ignore())
+                .ForMember(dest => dest.PresentCount, opt => opt.Ignore())
+                .ForMember(dest => dest.AbsentCount, opt => opt.Ignore());
 
             // ======================================================================
             // CLASS MAPPINGS
             // ======================================================================
 
             CreateMap<Class, ClassDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.ClassCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject.SubjectName))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject.SubjectCode))
-                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Subject.Credits))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.User.FullName))
-                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher.TeacherCode))
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject.Semester.Name))
-                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src =>
-                    src.Members != null ? src.Members.Count : 0))
-                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count : 0))
-                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count : 0));
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectName : null))
+                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectCode : null))
+                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.Credits : 0))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.FullName : null))
+                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.TeacherCode : null))
+                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Semester != null ? src.Subject.Semester.Name : null))
+                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src => src.Members != null ? src.Members.Count : 0))
+                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count : 0))
+                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src => src.Slots != null ? src.Slots.Count : 0));
 
             CreateMap<Class, ClassDetailDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.ClassCode))
                 .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectId))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject.SubjectName))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject.SubjectCode))
-                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Subject.Credits))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectName : null))
+                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectCode : null))
+                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.Credits : 0))
                 .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherUserId))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.User.FullName))
-                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher.TeacherCode))
-                .ForMember(dest => dest.TeacherEmail, opt => opt.MapFrom(src => src.Teacher.User.Email))
-                .ForMember(dest => dest.TeacherPhone, opt => opt.MapFrom(src => src.Teacher.PhoneNumber))
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject.Semester.Name))
-                .ForMember(dest => dest.SemesterStartDate, opt => opt.MapFrom(src => src.Subject.Semester.StartDate))
-                .ForMember(dest => dest.SemesterEndDate, opt => opt.MapFrom(src => src.Subject.Semester.EndDate))
-                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src =>
-                    src.Members != null ? src.Members.Count : 0))
-                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count : 0))
-                .ForMember(dest => dest.ApprovedEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count(e => e.IsApproved) : 0))
-                .ForMember(dest => dest.PendingEnrollments, opt => opt.MapFrom(src =>
-                    src.Enrolls != null ? src.Enrolls.Count(e => !e.IsApproved) : 0))
-                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count : 0))
-                .ForMember(dest => dest.CompletedSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count(s => s.Status == "Completed") : 0))
-                .ForMember(dest => dest.ScheduledSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count(s => s.Status == "Scheduled") : 0))
-                .ForMember(dest => dest.Students, opt => opt.MapFrom(src => src.Members))
-                .ForMember(dest => dest.Enrollments, opt => opt.MapFrom(src => src.Enrolls))
-                .ForMember(dest => dest.Slots, opt => opt.MapFrom(src => src.Slots));
-
-            // ClassMember -> ClassStudentInfo
-            CreateMap<ClassMember, ClassStudentInfo>()
-                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.StudentId))
-                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student.StudentCode))
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Student.User.FullName))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Student.User.Email))
-                .ForMember(dest => dest.GPA, opt => opt.MapFrom(src => src.Student.GPA))
-                .ForMember(dest => dest.JoinedAt, opt => opt.MapFrom(src => src.JoinedAt));
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.FullName : null))
+                .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.TeacherCode : null))
+                .ForMember(dest => dest.TeacherEmail, opt => opt.MapFrom(src => src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.Email : null))
+                .ForMember(dest => dest.TeacherPhone, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.PhoneNumber : null))
+                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Semester != null ? src.Subject.Semester.Name : null))
+                .ForMember(dest => dest.SemesterStartDate, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Semester != null ? src.Subject.Semester.StartDate : DateTime.MinValue))
+                .ForMember(dest => dest.SemesterEndDate, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Semester != null ? src.Subject.Semester.EndDate : DateTime.MinValue))
+                .ForMember(dest => dest.TotalStudents, opt => opt.MapFrom(src => src.Members != null ? src.Members.Count : 0))
+                .ForMember(dest => dest.TotalEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count : 0))
+                .ForMember(dest => dest.ApprovedEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count(e => e.IsApproved) : 0))
+                .ForMember(dest => dest.PendingEnrollments, opt => opt.MapFrom(src => src.Enrolls != null ? src.Enrolls.Count(e => !e.IsApproved) : 0))
+                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src => src.Slots != null ? src.Slots.Count : 0))
+                .ForMember(dest => dest.CompletedSlots, opt => opt.MapFrom(src => src.Slots != null ? src.Slots.Count(s => s.Status == "Completed") : 0))
+                .ForMember(dest => dest.ScheduledSlots, opt => opt.MapFrom(src => src.Slots != null ? src.Slots.Count(s => s.Status == "Scheduled") : 0));
 
             // ======================================================================
-            // ENROLLMENT MAPPINGS
+            // ATTENDANCE MAPPINGS
             // ======================================================================
 
-            CreateMap<Enroll, EnrollmentDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.StudentId))
-                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student.StudentCode))
-                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.User.FullName))
-                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student.User.Email))
-                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Class.Subject.SubjectName))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Class.Subject.SubjectCode))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(src => src.RegisteredAt))
-                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved));
+            CreateMap<Attendance, AttendanceDto>()
+                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student != null ? src.Student.StudentCode : null))
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null && src.Student.User != null ? src.Student.User.FullName : null))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectName : null))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Slot != null ? src.Slot.Date : DateTime.MinValue))
+                .ForMember(dest => dest.TimeSlotName, opt => opt.MapFrom(src => src.Slot != null && src.Slot.TimeSlot != null ? src.Slot.TimeSlot.Name : null))
+                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Slot != null && src.Slot.Class != null ? src.Slot.Class.ClassCode : null));
 
-            CreateMap<Enroll, EnrollmentDetailDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(src => src.RegisteredAt))
-                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved))
-
-                // Student
-                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.StudentId))
-                .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student.StudentCode))
-                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.User.FullName))
-                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student.User.Email))
-                .ForMember(dest => dest.StudentPhone, opt => opt.MapFrom(src => "N/A"))
-                .ForMember(dest => dest.StudentGPA, opt => opt.MapFrom(src => src.Student.GPA))
-
-                // Class
-                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode))
-
-                // Subject
-                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.Class.SubjectId))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Class.Subject.SubjectCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Class.Subject.SubjectName))
-                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Class.Subject.Credits))
-
-                // Teacher
-                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Class.TeacherUserId))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher.User.FullName))
-                .ForMember(dest => dest.TeacherEmail, opt => opt.MapFrom(src => src.Class.Teacher.User.Email))
-
-                // Semester
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Class.Subject.Semester.Name))
-                .ForMember(dest => dest.SemesterStartDate, opt => opt.MapFrom(src => src.Class.Subject.Semester.StartDate))
-                .ForMember(dest => dest.SemesterEndDate, opt => opt.MapFrom(src => src.Class.Subject.Semester.EndDate));
-
-            CreateMap<Enroll, StudentEnrollmentHistoryDto>()
-                .ForMember(dest => dest.EnrollmentId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode))
-                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Class.Subject.SubjectCode))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Class.Subject.SubjectName))
-                .ForMember(dest => dest.Credits, opt => opt.MapFrom(src => src.Class.Subject.Credits))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher.User.FullName))
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Class.Subject.Semester.Name))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(src => src.RegisteredAt))
-                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved))
-                .ForMember(dest => dest.SemesterStartDate, opt => opt.MapFrom(src => src.Class.Subject.Semester.StartDate))
-                .ForMember(dest => dest.SemesterEndDate, opt => opt.MapFrom(src => src.Class.Subject.Semester.EndDate));
-
-            // ======================================================================
-            // TIMESLOT
-            // ======================================================================
-
-            CreateMap<TimeSlot, TimeSlotDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.StartTime.ToString(@"hh\\:mm")))
-                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.EndTime.ToString(@"hh\\:mm")))
-                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src =>
-                    (int)(src.EndTime - src.StartTime).TotalMinutes))
-                .ForMember(dest => dest.TotalSlots, opt => opt.MapFrom(src =>
-                    src.Slots != null ? src.Slots.Count : 0));
-
-            // ======================================================================
-            // SUBJECT
-            // ======================================================================
-
-            CreateMap<Subject, SubjectDto>()
-                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Semester.Name))
-                .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.Classes.Count));
-
-            CreateMap<CreateSubjectRequest, Subject>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Semester, opt => opt.Ignore())
-                .ForMember(dest => dest.Classes, opt => opt.Ignore())
-                .ForMember(dest => dest.Slots, opt => opt.Ignore())
-                .ForMember(dest => dest.Grades, opt => opt.Ignore())
-                .ForMember(dest => dest.Roadmaps, opt => opt.Ignore())
-                .ForMember(dest => dest.SubjectCriterias, opt => opt.Ignore());
-
-            // ======================================================================
-            // SEMESTER
-            // ======================================================================
-
-            CreateMap<Semester, SemesterDto>()
-                .ForMember(dest => dest.TotalSubjects, opt => opt.MapFrom(src => src.Subjects.Count))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src =>
-                    src.StartDate <= DateTime.UtcNow && src.EndDate >= DateTime.UtcNow));
-
-            CreateMap<CreateSemesterRequest, Semester>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.IsClosed, opt => opt.MapFrom(src => false))
-                .ForMember(dest => dest.Subjects, opt => opt.Ignore());
+            CreateMap<Attendance, AttendanceDetailDto>()
+                .IncludeBase<Attendance, AttendanceDto>()
+                .ForMember(dest => dest.StudentEmail, opt => opt.MapFrom(src => src.Student != null && src.Student.User != null ? src.Student.User.Email : null))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Slot != null && src.Slot.Class != null && src.Slot.Class.Teacher != null && src.Slot.Class.Teacher.User != null ? src.Slot.Class.Teacher.User.FullName : null))
+                .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Semester != null ? src.Subject.Semester.Name : null))
+                .ForMember(dest => dest.SlotStatus, opt => opt.MapFrom(src => src.Slot != null ? src.Slot.Status : null));
         }
     }
 }
