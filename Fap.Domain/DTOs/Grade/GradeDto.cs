@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 
 namespace Fap.Domain.DTOs.Grade
 {
+    /// <summary>
     /// DTO for grade display
+    /// </summary>
     public class GradeDto
     {
         public Guid Id { get; set; }
@@ -20,7 +23,9 @@ namespace Fap.Domain.DTOs.Grade
         public DateTime UpdatedAt { get; set; }
     }
 
+    /// <summary>
     /// Detailed grade information
+    /// </summary>
     public class GradeDetailDto
     {
         public Guid Id { get; set; }
@@ -28,7 +33,7 @@ namespace Fap.Domain.DTOs.Grade
         public string LetterGrade { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-// Student Information
+        // Student Information
         public Guid StudentId { get; set; }
         public string StudentCode { get; set; }
         public string StudentName { get; set; }
@@ -50,7 +55,9 @@ namespace Fap.Domain.DTOs.Grade
         public string TeacherName { get; set; }
     }
 
+    /// <summary>
     /// Class grade report - grades for all students in a class
+    /// </summary>
     public class ClassGradeReportDto
     {
         public Guid ClassId { get; set; }
@@ -79,9 +86,11 @@ namespace Fap.Domain.DTOs.Grade
         public int ComponentWeight { get; set; }
         public decimal? Score { get; set; }
         public string LetterGrade { get; set; }
-  }
+    }
 
+    /// <summary>
     /// Student grade transcript
+    /// </summary>
     public class StudentGradeTranscriptDto
     {
         public Guid StudentId { get; set; }
