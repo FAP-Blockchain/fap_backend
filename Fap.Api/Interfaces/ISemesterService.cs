@@ -9,5 +9,6 @@ namespace Fap.Api.Interfaces
      Task<(bool Success, string Message, Guid? SemesterId)> CreateSemesterAsync(CreateSemesterRequest request);
         Task<(bool Success, string Message)> UpdateSemesterAsync(Guid id, UpdateSemesterRequest request);
         Task<(bool Success, string Message)> CloseSemesterAsync(Guid id);
+        Task<(bool Success, string Message)> UpdateSemesterActiveStatusAsync(Guid id, bool isActive);
     }
 }

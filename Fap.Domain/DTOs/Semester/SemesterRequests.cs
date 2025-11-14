@@ -38,4 +38,9 @@ namespace Fap.Domain.DTOs.Semester
  [Required(ErrorMessage = "End date is required")]
         public DateTime EndDate { get; set; }
     }
+
+    public class UpdateSemesterActiveStatusRequest
+    {
+        public bool IsActive { get; set; }
+    }
 }

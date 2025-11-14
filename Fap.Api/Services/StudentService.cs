@@ -130,5 +130,24 @@ namespace Fap.Api.Services
                 throw;
             }
         }
+
+        public async Task<StudentDetailDto?> GetStudentByUserIdAsync(Guid userId)
+        {
+            try
+            {
+                var student = await _uow.Students.GetByUserIdAsync(userId);
+                if (student == null)
+                {
+                    return null;
+                }
+
+                return await GetStudentByIdAsync(student.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error getting student profile for user {userId}: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

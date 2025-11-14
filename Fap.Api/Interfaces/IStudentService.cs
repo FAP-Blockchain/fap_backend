@@ -7,5 +7,6 @@ namespace Fap.Api.Interfaces
     {
         Task<PagedResult<StudentDto>> GetStudentsAsync(GetStudentsRequest request);
         Task<StudentDetailDto?> GetStudentByIdAsync(Guid id);
+        Task<StudentDetailDto?> GetStudentByUserIdAsync(Guid userId);
     }
 }

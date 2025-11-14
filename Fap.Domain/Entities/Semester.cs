@@ -16,6 +16,7 @@ namespace Fap.Domain.Entities
         [Required] public DateTime StartDate { get; set; }
         [Required] public DateTime EndDate { get; set; }
         
+        public bool IsActive { get; set; } = true;
         public bool IsClosed { get; set; } = false;  // ✅ NEW: Trạng thái đóng học kỳ
 
         public virtual ICollection<Subject> Subjects { get; set; }

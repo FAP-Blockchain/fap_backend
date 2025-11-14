@@ -1,11 +1,66 @@
-version: '3.8'
+# version: '3.8'
+
+# services:
+#   # =============================================================================
+#   # FAP Backend API Service
+#   # =============================================================================
+#   api:
+#     image: ${API_IMAGE}
+#     container_name: fap-backend-api
+#     restart: unless-stopped
+#     ports:
+#       - "8080:80"
+#       - "8443:443"
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: Development
+#       ASPNETCORE_URLS: http://+:80
+#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=FapDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;Encrypt=False;"
+#     extra_hosts:
+#       - "host.docker.internal:host-gateway"
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "10m"
+#         max-file: "3"
+
+#   # =============================================================================
+#   # SQL Server Service
+#   # =============================================================================
+#   sqlserver:
+#     image: mcr.microsoft.com/mssql/server:2022-latest
+#     container_name: fap-sqlserver
+#     restart: unless-stopped
+#     ports:
+#       - "1433:1433"
+#     environment:
+#       ACCEPT_EULA: "Y"
+#       SA_PASSWORD: ${DB_PASSWORD}
+#       MSSQL_PID: "Developer"
+#     volumes:
+#       - sqlserver-data:/var/opt/mssql
+#     healthcheck:
+#       test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${DB_PASSWORD}" -Q "SELECT 1" || exit 1
+#       interval: 10s
+#       timeout: 5s
+#       retries: 10
+#       start_period: 90s
+
+# volumes:
+#   sqlserver-data:
 
 services:
-  # =============================================================================
-  # FAP Backend API Service
-  # =============================================================================
   api:
     image: ${API_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64         # << thêm dòng này
     container_name: fap-backend-api
     restart: unless-stopped
     ports:
@@ -18,26 +73,22 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD-SHELL","wget -qO- http://localhost:80/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: { max-size: "10m", max-file: "3" }
 
-  # =============================================================================
-  # SQL Server Service
-  # =============================================================================
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64         # << thêm dòng này
     container_name: fap-sqlserver
     restart: unless-stopped
     ports:
-      - "1433:1433"
+      - "11433:1433"              # << đổi cổng host (VD: 11433)
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: ${DB_PASSWORD}

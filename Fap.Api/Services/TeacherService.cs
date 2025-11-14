@@ -130,5 +130,16 @@ namespace Fap.Api.Services
                 throw;
             }
         }
+
+        public async Task<TeacherDetailDto?> GetTeacherByUserIdAsync(Guid userId)
+        {
+            var teacher = await _uow.Teachers.GetByUserIdAsync(userId);
+            if (teacher == null)
+            {
+                return null;
+            }
+
+            return await GetTeacherByIdAsync(teacher.Id);
+        }
     }
 }

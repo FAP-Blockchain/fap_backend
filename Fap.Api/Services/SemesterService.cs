@@ -30,19 +30,11 @@ namespace Fap.Api.Services
   query = query.Where(s => s.Name.ToLower().Contains(searchLower));
  }
 
-   // Filter by active status
-      if (request.IsActive.HasValue)
- {
-   var now = DateTime.UtcNow;
-      if (request.IsActive.Value)
+        // Filter by active status
+        if (request.IsActive.HasValue)
         {
-      query = query.Where(s => s.StartDate <= now && s.EndDate >= now);
-           }
-       else
-   {
-           query = query.Where(s => s.StartDate > now || s.EndDate < now);
-  }
-       }
+            query = query.Where(s => s.IsActive == request.IsActive.Value);
+        }
 
    // Filter by closed status
  if (request.IsClosed.HasValue)
@@ -71,15 +63,15 @@ namespace Fap.Api.Services
      var semesters = query
      .Skip((request.PageNumber - 1) * request.PageSize)
      .Take(request.PageSize)
-      .Select(s => new SemesterDto
-     {
-       Id = s.Id,
-      Name = s.Name,
-        StartDate = s.StartDate,
-     EndDate = s.EndDate,
-      TotalSubjects = s.Subjects.Count,
- IsActive = s.StartDate <= now2 && s.EndDate >= now2,
-     IsClosed = s.IsClosed
+        .Select(s => new SemesterDto
+        {
+            Id = s.Id,
+            Name = s.Name,
+            StartDate = s.StartDate,
+            EndDate = s.EndDate,
+            TotalSubjects = s.Subjects.Count,
+            IsActive = s.IsActive,
+            IsClosed = s.IsClosed
         })
        .ToList();
 
@@ -99,7 +91,7 @@ namespace Fap.Api.Services
     Name = semester.Name,
         StartDate = semester.StartDate,
       EndDate = semester.EndDate,
-      IsActive = semester.StartDate <= now && semester.EndDate >= now,
+            IsActive = semester.IsActive,
   IsClosed = semester.IsClosed,
             TotalSubjects = semester.Subjects?.Count ?? 0,
      TotalClasses = semester.Subjects?.Sum(s => s.Classes?.Count ?? 0) ?? 0,
@@ -146,14 +138,15 @@ if (hasOverlap)
    return (false, "The date range overlaps with an existing semester", null);
        }
 
-    var semester = new Semester
-   {
-     Id = Guid.NewGuid(),
-       Name = request.Name,
-      StartDate = request.StartDate,
-    EndDate = request.EndDate,
-     IsClosed = false
-  };
+            var semester = new Semester
+            {
+                Id = Guid.NewGuid(),
+                Name = request.Name,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                IsActive = true,
+                IsClosed = false
+            };
 
        await _uow.Semesters.AddAsync(semester);
      await _uow.SaveChangesAsync();
@@ -228,7 +221,37 @@ if (hasOverlap)
     }
    }
 
-  public async Task<(bool Success, string Message)> CloseSemesterAsync(Guid id)
+        public async Task<(bool Success, string Message)> UpdateSemesterActiveStatusAsync(Guid id, bool isActive)
+        {
+            try
+            {
+                var semester = await _uow.Semesters.GetByIdAsync(id);
+                if (semester == null)
+                {
+                    return (false, "Semester not found");
+                }
+
+                if (semester.IsClosed && isActive)
+                {
+                    return (false, "Cannot activate a closed semester");
+                }
+
+                semester.IsActive = isActive;
+                _uow.Semesters.Update(semester);
+                await _uow.SaveChangesAsync();
+
+                var state = isActive ? "activated" : "deactivated";
+                _logger.LogInformation($"✅ Semester {state}: {semester.Name}");
+                return (true, $"Semester {state} successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error updating semester active status: {ex.Message}");
+                return (false, "An error occurred while updating semester status");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> CloseSemesterAsync(Guid id)
         {
        try
   {

@@ -8,5 +8,6 @@ namespace Fap.Api.Interfaces
         Task<List<TeacherDto>> GetAllTeachersAsync();
         Task<PagedResult<TeacherDto>> GetTeachersAsync(GetTeachersRequest request);
         Task<TeacherDetailDto?> GetTeacherByIdAsync(Guid id);
+        Task<TeacherDetailDto?> GetTeacherByUserIdAsync(Guid userId);
     }
 }

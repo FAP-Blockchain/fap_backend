@@ -5,6 +5,7 @@ using Fap.Domain.DTOs.Student;
 using Fap.Domain.DTOs.Attendance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Fap.Api.Controllers
 {
@@ -48,7 +49,7 @@ namespace Fap.Api.Controllers
             }
         }
 
-  [HttpGet("{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetStudentById(Guid id)
         {
      try
@@ -70,6 +71,38 @@ catch (Exception ex)
                 return StatusCode(500, new { message = "An error occurred while retrieving student" });
             }
  }
+
+        [HttpGet("me")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetCurrentStudentProfile()
+        {
+            try
+            {
+                var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdValue))
+                {
+                    return Unauthorized(new { message = "User context not found" });
+                }
+
+                if (!Guid.TryParse(userIdValue, out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid user identifier" });
+                }
+
+                var student = await _studentService.GetStudentByUserIdAsync(userId);
+                if (student == null)
+                {
+                    return NotFound(new { message = "Student profile not found for current user" });
+                }
+
+                return Ok(student);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting current student profile: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving current student profile" });
+            }
+        }
 
         /// <summary>
         /// GET /api/students/{id}/enrollments - Get student's enrollment history

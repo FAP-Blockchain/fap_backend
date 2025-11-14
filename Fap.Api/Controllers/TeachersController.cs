@@ -1,3 +1,4 @@
+using Fap.Api.Extensions;
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Teacher;
 using Fap.Domain.DTOs.Slot;
@@ -62,6 +63,32 @@ return Ok(result);
      _logger.LogError($"Error getting teacher {id}: {ex.Message}");
     return StatusCode(500, new { message = "An error occurred while retrieving teacher" });
     }
+        }
+
+        [HttpGet("me")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> GetCurrentTeacherProfile()
+        {
+            try
+            {
+                var userId = User.GetRequiredUserId();
+                var teacher = await _teacherService.GetTeacherByUserIdAsync(userId);
+                if (teacher == null)
+                {
+                    return NotFound(new { message = "Teacher profile not found for current user" });
+                }
+
+                return Ok(teacher);
+            }
+            catch (InvalidOperationException)
+            {
+                return Unauthorized(new { message = "Unable to identify current user" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting current teacher profile: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while retrieving teacher profile" });
+            }
         }
 
         /// <summary>

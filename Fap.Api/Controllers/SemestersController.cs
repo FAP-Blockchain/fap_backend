@@ -145,5 +145,33 @@ var semester = await _semesterService.GetSemesterByIdAsync(id);
           return StatusCode(500, new { message = "An error occurred while closing semester" });
      }
         }
+
+        /// <summary>
+        /// PATCH /api/semesters/{id}/active - Update active status
+        /// </summary>
+        [HttpPatch("{id}/active")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateActiveStatus(Guid id, [FromBody] UpdateSemesterActiveStatusRequest request)
+        {
+            try
+            {
+                var (success, message) = await _semesterService.UpdateSemesterActiveStatusAsync(id, request.IsActive);
+                if (!success)
+                {
+                    if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return NotFound(new { message });
+                    }
+                    return BadRequest(new { message });
+                }
+
+                return Ok(new { message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"? Error updating semester {id} active status: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while updating semester status" });
+            }
+        }
     }
 }
