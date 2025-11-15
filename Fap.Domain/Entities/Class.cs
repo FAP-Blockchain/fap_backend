@@ -28,6 +28,10 @@ namespace Fap.Domain.Entities
         [ForeignKey(nameof(TeacherUserId))]
         public Teacher Teacher { get; set; }
 
+        // ✅ Số lượng sinh viên tối đa
+        [Range(1, 500)]
+        public int MaxEnrollment { get; set; } = 40; // Mặc định 40 sinh viên
+
         // ✅ Sinh viên trong lớp
         public virtual ICollection<ClassMember> Members { get; set; }
 
