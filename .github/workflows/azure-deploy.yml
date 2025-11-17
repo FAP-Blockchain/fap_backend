@@ -2,10 +2,8 @@
 
 on:
   push:
-    branches: [ deploy, main ]
-  pull_request:
-    branches: [ deploy ]
-  workflow_dispatch:  # Cho phép trigger thủ công từ GitHub UI
+    branches: [ main ]  
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: uap-blockchain    
@@ -18,38 +16,31 @@ jobs:
     name: Build and Deploy to Azure
     
     steps:
-    # 1. Checkout code từ repository
     - name: 🔽 Checkout repository
       uses: actions/checkout@v4
     
-    # 2. Setup .NET 8 SDK
     - name: ⚙️ Setup .NET ${{ env.DOTNET_VERSION }}
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    # 3. Restore dependencies
     - name: 📦 Restore dependencies
       run: dotnet restore
       
-    # 4. Build project
     - name: 🔨 Build application
       run: dotnet build --configuration Release --no-restore
     
-    # 5. Run tests (optional - bỏ qua nếu fail)
     - name: 🧪 Run tests
       run: dotnet test --no-build --verbosity normal --configuration Release
       continue-on-error: true
-      
-    # 6. Publish application
+
     - name: 📤 Publish application
       run: |
         dotnet publish ${{ env.PROJECT_PATH }} \
-          --configuration Release \
-          --output ${{ github.workspace }}/publish \
-          --no-build
-    
-    # 7. Deploy to Azure Web App
+        --configuration Release \
+        --output ${{ github.workspace }}/publish \
+        --no-build
+  
     - name: 🚀 Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
@@ -57,7 +48,6 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ${{ github.workspace }}/publish
 
-    # 8. Notification on success
     - name: ✅ Deployment completed successfully
       if: success()
       run: |
@@ -70,7 +60,6 @@ jobs:
         echo "👤 Author: ${{ github.actor }}"
         echo "=========================================="
     
-    # 9. Notification on failure
     - name: ❌ Deployment failed
       if: failure()
       run: |
