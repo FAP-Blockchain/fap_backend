@@ -8,7 +8,7 @@ namespace Fap.Domain.DTOs.Subject
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; }
     public Guid? SemesterId { get; set; }
-    public string SortBy { get; set; } = "SubjectCode"; // SubjectCode, SubjectName, Credits
+        public string SortBy { get; set; } = "SubjectCode"; // SubjectCode, SubjectName, Credits
         public bool IsDescending { get; set; } = false;
     }
 
@@ -37,9 +37,9 @@ namespace Fap.Domain.DTOs.Subject
         [MaxLength(500)]
   public string? Prerequisites { get; set; }
 
-        // ? Still need semester for creating initial offering
-        [Required(ErrorMessage = "Semester ID is required for initial offering")]
-        public Guid SemesterId { get; set; }
+        // ? REMOVED: SemesterId no longer needed
+        // Subject is master data, independent of semesters
+    // SubjectOfferings are auto-created when creating Semester
     }
 
     public class UpdateSubjectRequest
