@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fap.Api.Services
 {
-    public class AttendanceService : IAttendanceService
+    public partial class AttendanceService : IAttendanceService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -109,7 +109,7 @@ namespace Fap.Api.Services
                     Id = Guid.NewGuid(),
                     SlotId = request.SlotId,
                     StudentId = studentAttendance.StudentId,
-                    SubjectId = classData.SubjectId,
+                    SubjectId = classData.SubjectOffering.SubjectId, // ? FIXED
                     IsPresent = studentAttendance.IsPresent,
                     Notes = studentAttendance.Notes,
                     IsExcused = false,
@@ -282,7 +282,7 @@ namespace Fap.Api.Services
             {
                 ClassId = classId,
                 ClassCode = classEntity.ClassCode,
-                SubjectName = classEntity.Subject.SubjectName,
+                SubjectName = classEntity.SubjectOffering.Subject.SubjectName, // ? FIXED
                 TeacherName = classEntity.Teacher.User.FullName,
                 TotalSlots = totalSlots,
                 TotalStudents = students.Count,

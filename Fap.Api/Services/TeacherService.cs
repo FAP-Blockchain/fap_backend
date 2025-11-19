@@ -111,14 +111,14 @@ namespace Fap.Api.Services
                     {
                         ClassId = c.Id,
                         ClassCode = c.ClassCode,
-                        SubjectName = c.Subject?.SubjectName ?? "N/A",
-                        SubjectCode = c.Subject?.SubjectCode ?? "N/A",
-                        Credits = c.Subject?.Credits ?? 0,
-                        SemesterName = c.Subject?.Semester?.Name ?? "N/A",
+                        SubjectName = c.SubjectOffering?.Subject?.SubjectName ?? "N/A", // ? FIXED
+                        SubjectCode = c.SubjectOffering?.Subject?.SubjectCode ?? "N/A", // ? FIXED
+                        Credits = c.SubjectOffering?.Subject?.Credits ?? 0, // ? FIXED
+                        SemesterName = c.SubjectOffering?.Semester?.Name ?? "N/A", // ? FIXED
                         TotalStudents = c.Members?.Count ?? 0,
                         TotalSlots = c.Slots?.Count ?? 0
                     }).ToList() ?? new List<TeachingClassInfo>(),
-                    
+        
                     // Statistics
                     TotalClasses = teacher.Classes?.Count ?? 0,
                     TotalStudents = teacher.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0

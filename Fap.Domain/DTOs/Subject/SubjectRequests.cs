@@ -4,45 +4,67 @@ namespace Fap.Domain.DTOs.Subject
 {
     public class GetSubjectsRequest
     {
- public int PageNumber { get; set; } = 1;
+        public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; }
-        public Guid? SemesterId { get; set; }
-        public string SortBy { get; set; } = "SubjectCode"; // SubjectCode, SubjectName, Credits
+    public Guid? SemesterId { get; set; }
+    public string SortBy { get; set; } = "SubjectCode"; // SubjectCode, SubjectName, Credits
         public bool IsDescending { get; set; } = false;
     }
 
     public class CreateSubjectRequest
     {
         [Required(ErrorMessage = "Subject code is required")]
-        [MaxLength(50, ErrorMessage = "Subject code cannot exceed 50 characters")]
-        public string SubjectCode { get; set; }
+     [MaxLength(50, ErrorMessage = "Subject code cannot exceed 50 characters")]
+        public string SubjectCode { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Subject name is required")]
-      [MaxLength(150, ErrorMessage = "Subject name cannot exceed 150 characters")]
-        public string SubjectName { get; set; }
+  [Required(ErrorMessage = "Subject name is required")]
+     [MaxLength(150, ErrorMessage = "Subject name cannot exceed 150 characters")]
+      public string SubjectName { get; set; } = string.Empty;
 
         [Range(1, 10, ErrorMessage = "Credits must be between 1 and 10")]
         public int Credits { get; set; }
 
-   [Required(ErrorMessage = "Semester ID is required")]
-      public Guid SemesterId { get; set; }
+  [MaxLength(1000)]
+        public string? Description { get; set; }
+
+     [MaxLength(50)]
+        public string? Category { get; set; }
+
+        [MaxLength(100)]
+        public string? Department { get; set; }
+
+        [MaxLength(500)]
+  public string? Prerequisites { get; set; }
+
+        // ? Still need semester for creating initial offering
+        [Required(ErrorMessage = "Semester ID is required for initial offering")]
+        public Guid SemesterId { get; set; }
     }
 
     public class UpdateSubjectRequest
     {
-        [Required(ErrorMessage = "Subject code is required")]
+  [Required(ErrorMessage = "Subject code is required")]
         [MaxLength(50, ErrorMessage = "Subject code cannot exceed 50 characters")]
-   public string SubjectCode { get; set; }
+      public string SubjectCode { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Subject name is required")]
         [MaxLength(150, ErrorMessage = "Subject name cannot exceed 150 characters")]
-        public string SubjectName { get; set; }
+        public string SubjectName { get; set; } = string.Empty;
 
         [Range(1, 10, ErrorMessage = "Credits must be between 1 and 10")]
         public int Credits { get; set; }
 
-      [Required(ErrorMessage = "Semester ID is required")]
-        public Guid SemesterId { get; set; }
+        [MaxLength(1000)]
+  public string? Description { get; set; }
+
+        [MaxLength(50)]
+        public string? Category { get; set; }
+
+        [MaxLength(100)]
+   public string? Department { get; set; }
+
+        [MaxLength(500)]
+        public string? Prerequisites { get; set; }
     }
 }

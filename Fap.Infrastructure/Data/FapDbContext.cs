@@ -15,6 +15,7 @@ namespace Fap.Infrastructure.Data
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassMember> ClassMembers { get; set; }
         public DbSet<Subject> Subjects { get; set; }
+        public DbSet<SubjectOffering> SubjectOfferings { get; set; }  // ✅ NEW
         public DbSet<SubjectCriteria> SubjectCriteria { get; set; }
         public DbSet<Grade> Grades { get; set; }
         public DbSet<GradeComponent> GradeComponents { get; set; }
@@ -30,7 +31,7 @@ namespace Fap.Infrastructure.Data
         public DbSet<Student> Students { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<Otp> Otps { get; set; }  // ✅ NEW
+        public DbSet<Otp> Otps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,8 +52,6 @@ namespace Fap.Infrastructure.Data
             modelBuilder.Entity<SubjectCriteria>()
                 .Property(sc => sc.MinScore)
                 .HasPrecision(4, 2); // 0.00 - 99.99
-
-            // StudentRoadmap.FinalScore already has [Column(TypeName = "decimal(4,2)")]
 
             // ==================== RELATIONSHIPS ====================
 
@@ -97,6 +96,33 @@ namespace Fap.Infrastructure.Data
                 .WithMany(s => s.ClassMembers)
                 .HasForeignKey(cm => cm.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ NEW: SubjectOffering <-> Subject
+            modelBuilder.Entity<SubjectOffering>()
+                .HasOne(so => so.Subject)
+                .WithMany(s => s.Offerings)
+                .HasForeignKey(so => so.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ NEW: SubjectOffering <-> Semester
+            modelBuilder.Entity<SubjectOffering>()
+                .HasOne(so => so.Semester)
+                .WithMany(sem => sem.SubjectOfferings)
+                .HasForeignKey(so => so.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ NEW: SubjectOffering <-> Class
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.SubjectOffering)
+                .WithMany(so => so.Classes)
+                .HasForeignKey(c => c.SubjectOfferingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ NEW: Unique constraint on SubjectOffering (Subject + Semester)
+            modelBuilder.Entity<SubjectOffering>()
+                .HasIndex(so => new { so.SubjectId, so.SemesterId })
+                .IsUnique()
+                .HasDatabaseName("UK_SubjectOffering_Subject_Semester");
 
             // Subject <-> SubjectCriteria
             modelBuilder.Entity<Subject>()

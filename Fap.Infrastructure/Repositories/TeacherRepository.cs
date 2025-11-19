@@ -1,4 +1,4 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -34,8 +34,11 @@ namespace Fap.Infrastructure.Repositories
             return await _dbSet
                 .Include(t => t.User)
                 .Include(t => t.Classes)
-                    .ThenInclude(c => c.Subject)
-                        .ThenInclude(s => s.Semester)
+                    .ThenInclude(c => c.SubjectOffering)  // ✅ CHANGED
+                        .ThenInclude(so => so.Subject)
+                .Include(t => t.Classes)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(t => t.Classes)
                     .ThenInclude(c => c.Members)
                 .Include(t => t.Classes)
@@ -98,18 +101,18 @@ namespace Fap.Infrastructure.Repositories
                     ? query.OrderByDescending(t => t.TeacherCode)
                     : query.OrderBy(t => t.TeacherCode),
                 "fullname" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(t => t.User != null ? t.User.FullName : "")
-                    : query.OrderBy(t => t.User != null ? t.User.FullName : ""),
-                "email" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(t => t.User != null ? t.User.Email : "")
-                    : query.OrderBy(t => t.User != null ? t.User.Email : ""),
+                    ? query.OrderByDescending(t => t.User != null ? t.User.FullName : string.Empty)
+                    : query.OrderBy(t => t.User != null ? t.User.FullName : string.Empty),
+                "specialization" => sortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(t => t.Specialization ?? string.Empty)
+                    : query.OrderBy(t => t.Specialization ?? string.Empty),
                 "hiredate" => sortOrder?.ToLower() == "desc"
                     ? query.OrderByDescending(t => t.HireDate)
                     : query.OrderBy(t => t.HireDate),
-                "specialization" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(t => t.Specialization ?? "")
-                    : query.OrderBy(t => t.Specialization ?? ""),
-                _ => query.OrderBy(t => t.TeacherCode) // Default sort
+                "classcount" => sortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(t => t.Classes.Count)
+                    : query.OrderBy(t => t.Classes.Count),
+                _ => query.OrderBy(t => t.TeacherCode)
             };
 
             // 4. Apply pagination

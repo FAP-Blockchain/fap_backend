@@ -1,4 +1,4 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,6 @@ namespace Fap.Infrastructure.Repositories
                 .Include(g => g.Student)
                     .ThenInclude(s => s.User)
                 .Include(g => g.Subject)
-                    .ThenInclude(s => s.Semester)
                 .Include(g => g.GradeComponent)
                 .FirstOrDefaultAsync(g => g.Id == id);
         }
@@ -30,7 +29,6 @@ namespace Fap.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(g => g.Subject)
-                    .ThenInclude(s => s.Semester)
                 .Include(g => g.GradeComponent)
                 .Where(g => g.StudentId == studentId)
                 .OrderBy(g => g.Subject.SubjectCode)
@@ -50,7 +48,8 @@ namespace Fap.Infrastructure.Repositories
         public async Task<List<Grade>> GetGradesByClassIdAsync(Guid classId)
         {
             var classEntity = await _context.Classes
-                .Include(c => c.Subject)
+                .Include(c => c.SubjectOffering)  // ✅ CHANGED
+                    .ThenInclude(so => so.Subject)
                 .FirstOrDefaultAsync(c => c.Id == classId);
 
             if (classEntity == null)
@@ -65,7 +64,7 @@ namespace Fap.Infrastructure.Repositories
                 .Include(g => g.Student)
                     .ThenInclude(s => s.User)
                 .Include(g => g.GradeComponent)
-                .Where(g => studentIds.Contains(g.StudentId) && g.SubjectId == classEntity.SubjectId)
+                .Where(g => studentIds.Contains(g.StudentId) && g.SubjectId == classEntity.SubjectOffering.SubjectId)  // ✅ CHANGED
                 .OrderBy(g => g.Student.StudentCode)
                 .ThenBy(g => g.GradeComponent.Name)
                 .ToListAsync();
@@ -98,13 +97,19 @@ namespace Fap.Infrastructure.Repositories
                     g.GradeComponentId == gradeComponentId);
         }
 
+        // ✅ CHANGED: Get grades by semester via SubjectOffering
         public async Task<List<Grade>> GetStudentGradesBySemesterAsync(Guid studentId, Guid semesterId)
         {
+            // Get all subject IDs offered in this semester
+            var subjectIds = await _context.SubjectOfferings
+                .Where(so => so.SemesterId == semesterId && so.IsActive)
+                .Select(so => so.SubjectId)
+                .ToListAsync();
+
             return await _dbSet
                 .Include(g => g.Subject)
-                    .ThenInclude(s => s.Semester)
                 .Include(g => g.GradeComponent)
-                .Where(g => g.StudentId == studentId && g.Subject.SemesterId == semesterId)
+                .Where(g => g.StudentId == studentId && subjectIds.Contains(g.SubjectId))
                 .OrderBy(g => g.Subject.SubjectCode)
                 .ThenBy(g => g.GradeComponent.Name)
                 .ToListAsync();

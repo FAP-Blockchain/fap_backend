@@ -123,7 +123,8 @@ namespace Fap.Api.Services
             await _unitOfWork.Slots.AddAsync(slot);
             await _unitOfWork.SaveChangesAsync();
 
-            return await GetSlotByIdAsync(slot.Id);
+            var createdSlot = await GetSlotByIdAsync(slot.Id);
+            return createdSlot ?? throw new InvalidOperationException("Failed to retrieve created slot");
         }
 
         public async Task<SlotDto?> UpdateSlotAsync(Guid id, UpdateSlotRequest request)

@@ -97,7 +97,7 @@ namespace Fap.Api.Services
                     {
                         Id = e.Id,
                         ClassCode = e.Class?.ClassCode ?? "N/A",
-                        SubjectName = e.Class?.Subject?.SubjectName ?? "N/A",
+                        SubjectName = e.Class?.SubjectOffering?.Subject?.SubjectName ?? "N/A", // ? FIXED
                         TeacherName = e.Class?.Teacher?.User?.FullName ?? "N/A",
                         RegisteredAt = e.RegisteredAt,
                         IsApproved = e.IsApproved
@@ -108,9 +108,9 @@ namespace Fap.Api.Services
                     {
                         ClassId = cm.Class.Id,
                         ClassCode = cm.Class.ClassCode,
-                        SubjectName = cm.Class.Subject?.SubjectName ?? "N/A",
-                        SubjectCode = cm.Class.Subject?.SubjectCode ?? "N/A",
-                        Credits = cm.Class.Subject?.Credits ?? 0,
+                        SubjectName = cm.Class.SubjectOffering?.Subject?.SubjectName ?? "N/A", // ? FIXED
+                        SubjectCode = cm.Class.SubjectOffering?.Subject?.SubjectCode ?? "N/A", // ? FIXED
+                        Credits = cm.Class.SubjectOffering?.Subject?.Credits ?? 0, // ? FIXED
                         TeacherName = cm.Class.Teacher?.User?.FullName ?? "N/A",
                         JoinedAt = cm.JoinedAt
                     }).ToList() ?? new List<ClassInfo>(),

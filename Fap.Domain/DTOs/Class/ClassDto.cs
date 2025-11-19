@@ -1,93 +1,98 @@
 using System;
+using System.Collections.Generic;
 
 namespace Fap.Domain.DTOs.Class
 {
     public class ClassDto
     {
         public Guid Id { get; set; }
-        public string ClassCode { get; set; }
-        public string SubjectName { get; set; }
-        public string SubjectCode { get; set; }
+        public string ClassCode { get; set; } = string.Empty;
+        
+        // SubjectOffering reference
+        public Guid SubjectOfferingId { get; set; }
+
+        // Subject Info
+        public Guid SubjectId { get; set; }
+        public string SubjectName { get; set; } = string.Empty;
+        public string SubjectCode { get; set; } = string.Empty;
         public int Credits { get; set; }
-        public string TeacherName { get; set; }
-        public string TeacherCode { get; set; }
-        public string SemesterName { get; set; }
-        public int TotalStudents { get; set; }
-        public int TotalEnrollments { get; set; }
-        public int TotalSlots { get; set; }
+        
+        // Semester Info
+        public Guid SemesterId { get; set; }
+        public string SemesterName { get; set; } = string.Empty;
+        
+        // Teacher Info
+        public Guid TeacherId { get; set; }
+        public string TeacherName { get; set; } = string.Empty;
+        public string TeacherCode { get; set; } = string.Empty;
+        public string? TeacherEmail { get; set; }
+        public string? TeacherPhone { get; set; }
+        
+        // Class Info
+        public int MaxEnrollment { get; set; }
+        public int CurrentEnrollment { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public class ClassDetailDto
     {
         public Guid Id { get; set; }
-        public string ClassCode { get; set; }
+        public string ClassCode { get; set; } = string.Empty;
+        
+        // SubjectOffering reference
+        public Guid SubjectOfferingId { get; set; }
         
         // Subject Info
         public Guid SubjectId { get; set; }
-        public string SubjectName { get; set; }
-        public string SubjectCode { get; set; }
+        public string SubjectName { get; set; } = string.Empty;
+        public string SubjectCode { get; set; } = string.Empty;
         public int Credits { get; set; }
         
         // Teacher Info
         public Guid TeacherId { get; set; }
-        public string TeacherName { get; set; }
-        public string TeacherCode { get; set; }
-        public string TeacherEmail { get; set; }
-        public string TeacherPhone { get; set; }
+        public string TeacherName { get; set; } = string.Empty;
+        public string TeacherCode { get; set; } = string.Empty;
+        public string? TeacherEmail { get; set; }
         
         // Semester Info
-        public string SemesterName { get; set; }
-        public DateTime SemesterStartDate { get; set; }
-        public DateTime SemesterEndDate { get; set; }
+        public Guid SemesterId { get; set; }
+        public string SemesterName { get; set; } = string.Empty;
         
-        // Statistics
-        public int TotalStudents { get; set; }
-        public int TotalEnrollments { get; set; }
-        public int ApprovedEnrollments { get; set; }
-        public int PendingEnrollments { get; set; }
-        public int TotalSlots { get; set; }
-        public int CompletedSlots { get; set; }
-        public int ScheduledSlots { get; set; }
+        // Class Info
+        public int MaxEnrollment { get; set; }
+        public int CurrentEnrollment { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
         
-        // Students in class
+        // Collections
         public List<ClassStudentInfo> Students { get; set; } = new();
-        
-        // Enrollments
-        public List<ClassEnrollmentInfo> Enrollments { get; set; } = new();
-        
-        // Schedule
-        public List<ClassSlotInfo> Slots { get; set; } = new();
+        public List<SlotSummaryDto> Slots { get; set; } = new();
     }
 
     public class ClassStudentInfo
     {
         public Guid StudentId { get; set; }
-        public string StudentCode { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
+        public string StudentCode { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public decimal GPA { get; set; }
         public DateTime JoinedAt { get; set; }
     }
 
-    public class ClassEnrollmentInfo
+    public class AssignedStudentInfo
     {
-        public Guid EnrollmentId { get; set; }
         public Guid StudentId { get; set; }
-        public string StudentCode { get; set; }
-        public string StudentName { get; set; }
-        public DateTime RegisteredAt { get; set; }
-        public bool IsApproved { get; set; }
+        public string StudentCode { get; set; } = string.Empty;
+        public string StudentName { get; set; } = string.Empty;
+        public DateTime JoinedAt { get; set; }
     }
 
-    public class ClassSlotInfo
+    public class SlotSummaryDto
     {
-        public Guid SlotId { get; set; }
+        public Guid Id { get; set; }
         public DateTime Date { get; set; }
-        public string TimeSlotName { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        public string Status { get; set; }
-        public string? SubstituteTeacherName { get; set; }
-        public int TotalAttendances { get; set; }
+        public string TimeSlotName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 }

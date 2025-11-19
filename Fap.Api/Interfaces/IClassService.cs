@@ -11,5 +11,9 @@ namespace Fap.Api.Interfaces
         Task<ClassResponse> UpdateClassAsync(Guid id, UpdateClassRequest request);
         Task<ClassResponse> DeleteClassAsync(Guid id);
         Task<ClassRosterDto> GetClassRosterAsync(Guid id, ClassRosterRequest request);
+        
+        // ==================== NEW METHODS ====================
+        Task<AssignStudentsResponse> AssignStudentsToClassAsync(Guid classId, AssignStudentsRequest request);
+        Task<RemoveStudentResponse> RemoveStudentFromClassAsync(Guid classId, Guid studentId);
     }
 }

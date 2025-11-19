@@ -9,229 +9,254 @@ namespace Fap.Api.Services
 {
     public class SubjectService : ISubjectService
     {
-   private readonly IUnitOfWork _uow;
+        private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-      private readonly ILogger<SubjectService> _logger;
+ private readonly ILogger<SubjectService> _logger;
 
         public SubjectService(IUnitOfWork uow, IMapper mapper, ILogger<SubjectService> logger)
-        {
-         _uow = uow;
-            _mapper = mapper;
+      {
+      _uow = uow;
+      _mapper = mapper;
             _logger = logger;
-     }
+        }
 
-   public async Task<(IEnumerable<SubjectDto> Subjects, int TotalCount)> GetSubjectsAsync(GetSubjectsRequest request)
-        {
-   var query = await _uow.Subjects.GetAllWithDetailsAsync();
-
-            // Apply search filter
-   if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-          {
-       var searchLower = request.SearchTerm.ToLower();
-        query = query.Where(s =>
-        s.SubjectCode.ToLower().Contains(searchLower) ||
-  s.SubjectName.ToLower().Contains(searchLower)
-  );
-      }
-
-            // Filter by semester
-        if (request.SemesterId.HasValue)
+        public async Task<(IEnumerable<SubjectDto> Subjects, int TotalCount)> GetSubjectsAsync(GetSubjectsRequest request)
   {
-      query = query.Where(s => s.SemesterId == request.SemesterId.Value);
-     }
+         var query = await _uow.Subjects.GetAllWithDetailsAsync();
+
+ // Apply search filter
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+  {
+           var searchLower = request.SearchTerm.ToLower();
+         query = query.Where(s =>
+ s.SubjectCode.ToLower().Contains(searchLower) ||
+              s.SubjectName.ToLower().Contains(searchLower)
+           );
+    }
+
+            // ✅ FIXED: Filter by semester through SubjectOfferings
+       if (request.SemesterId.HasValue)
+    {
+        query = query.Where(s => s.Offerings.Any(o => o.SemesterId == request.SemesterId.Value));
+   }
 
     // Sorting
             query = request.SortBy.ToLower() switch
-    {
-        "subjectname" => request.IsDescending
-       ? query.OrderByDescending(s => s.SubjectName)
-              : query.OrderBy(s => s.SubjectName),
-     "credits" => request.IsDescending
-          ? query.OrderByDescending(s => s.Credits)
-        : query.OrderBy(s => s.Credits),
-         _ => request.IsDescending
-         ? query.OrderByDescending(s => s.SubjectCode)
-        : query.OrderBy(s => s.SubjectCode)
-          };
+            {
+         "subjectname" => request.IsDescending
+         ? query.OrderByDescending(s => s.SubjectName)
+           : query.OrderBy(s => s.SubjectName),
+         "credits" => request.IsDescending
+       ? query.OrderByDescending(s => s.Credits)
+  : query.OrderBy(s => s.Credits),
+  _ => request.IsDescending
+  ? query.OrderByDescending(s => s.SubjectCode)
+       : query.OrderBy(s => s.SubjectCode)
+       };
 
-      var totalCount = query.Count();
+     var totalCount = query.Count();
 
-     // Pagination
- var subjects = query
-         .Skip((request.PageNumber - 1) * request.PageSize)
-    .Take(request.PageSize)
-       .Select(s => new SubjectDto
-       {
-      Id = s.Id,
+            // Pagination
+    var subjects = query
+       .Skip((request.PageNumber - 1) * request.PageSize)
+      .Take(request.PageSize)
+ .Select(s => new SubjectDto
+                {
+Id = s.Id,
      SubjectCode = s.SubjectCode,
-                  SubjectName = s.SubjectName,
-   Credits = s.Credits,
-         SemesterId = s.SemesterId,
- SemesterName = s.Semester.Name,
-          TotalClasses = s.Classes.Count
-       })
-        .ToList();
+         SubjectName = s.SubjectName,
+     Credits = s.Credits,
+      Description = s.Description,
+       Category = s.Category,
+      Department = s.Department,
+      Prerequisites = s.Prerequisites,
+      TotalOfferings = s.Offerings.Count
+             })
+    .ToList();
 
-          return (subjects, totalCount);
-        }
+            return (subjects, totalCount);
+     }
 
         public async Task<SubjectDetailDto?> GetSubjectByIdAsync(Guid id)
         {
-     var subject = await _uow.Subjects.GetByIdWithDetailsAsync(id);
-  if (subject == null) return null;
+            var subject = await _uow.Subjects.GetByIdWithDetailsAsync(id);
+       if (subject == null) return null;
 
             return new SubjectDetailDto
-            {
-     Id = subject.Id,
-                SubjectCode = subject.SubjectCode,
-    SubjectName = subject.SubjectName,
-     Credits = subject.Credits,
-             SemesterId = subject.SemesterId,
-     SemesterName = subject.Semester.Name,
-       SemesterStartDate = subject.Semester.StartDate,
-          SemesterEndDate = subject.Semester.EndDate,
-         Classes = subject.Classes.Select(c => new ClassSummaryDto
+     {
+       Id = subject.Id,
+       SubjectCode = subject.SubjectCode,
+      SubjectName = subject.SubjectName,
+       Credits = subject.Credits,
+ Description = subject.Description,
+      Category = subject.Category,
+         Department = subject.Department,
+    Prerequisites = subject.Prerequisites,
+     Offerings = subject.Offerings.Select(o => new SubjectOfferingDto
        {
-      Id = c.Id,
-ClassCode = c.ClassCode,
-              TeacherName = c.Teacher?.User?.FullName ?? "N/A",
-        CurrentEnrollment = c.Members?.Count ?? 0,
-         MaxEnrollment = 0
-         }).ToList(),
-                TotalStudentsEnrolled = subject.Classes.Sum(c => c.Members?.Count ?? 0)
-    };
-     }
-
-  public async Task<(bool Success, string Message, Guid? SubjectId)> CreateSubjectAsync(CreateSubjectRequest request)
-    {
-       try
-{
-        // Check if subject code already exists
-     var existingSubject = await _uow.Subjects.GetBySubjectCodeAsync(request.SubjectCode);
-          if (existingSubject != null)
-    {
-        return (false, $"Subject with code '{request.SubjectCode}' already exists", null);
+         Id = o.Id,
+        SubjectId = o.SubjectId,
+        SubjectCode = subject.SubjectCode,
+    SubjectName = subject.SubjectName,
+      Credits = subject.Credits,
+        SemesterId = o.SemesterId,
+          SemesterName = o.Semester?.Name ?? "N/A",
+      MaxClasses = o.MaxClasses,
+        SemesterCapacity = o.SemesterCapacity,
+         RegistrationStartDate = o.RegistrationStartDate,
+  RegistrationEndDate = o.RegistrationEndDate,
+               IsActive = o.IsActive,
+       Notes = o.Notes,
+            TotalClasses = o.Classes?.Count ?? 0,
+      TotalStudents = o.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0
+     }).ToList(),
+           TotalOfferings = subject.Offerings.Count,
+          TotalClasses = subject.Offerings.Sum(o => o.Classes?.Count ?? 0),
+ TotalStudentsEnrolled = subject.Offerings.Sum(o => o.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0)
+            };
         }
 
-           // Check if semester exists
-  var semester = await _uow.Semesters.GetByIdAsync(request.SemesterId);
-                if (semester == null)
-    {
-        return (false, $"Semester with ID {request.SemesterId} not found", null);
-         }
-
-       // Check if semester is closed
-         if (semester.IsClosed)
- {
-         return (false, "Cannot add subjects to a closed semester", null);
-         }
-
-   var subject = new Subject
-     {
-       Id = Guid.NewGuid(),
-       SubjectCode = request.SubjectCode,
-       SubjectName = request.SubjectName,
-        Credits = request.Credits,
-        SemesterId = request.SemesterId
-   };
-
-      await _uow.Subjects.AddAsync(subject);
-        await _uow.SaveChangesAsync();
-
-     _logger.LogInformation($"✅ Subject created: {subject.SubjectCode}");
-      return (true, "Subject created successfully", subject.Id);
-    }
-            catch (Exception ex)
-       {
-           _logger.LogError($"❌ Error creating subject: {ex.Message}");
-     return (false, "An error occurred while creating the subject", null);
-       }
-   }
-
-  public async Task<(bool Success, string Message)> UpdateSubjectAsync(Guid id, UpdateSubjectRequest request)
+      public async Task<(bool Success, string Message, Guid? SubjectId)> CreateSubjectAsync(CreateSubjectRequest request)
         {
-     try
+         try
             {
-      var subject = await _uow.Subjects.GetByIdAsync(id);
-     if (subject == null)
-        {
-      return (false, "Subject not found");
-       }
+      // Check if subject code already exists
+        var existingSubject = await _uow.Subjects.GetBySubjectCodeAsync(request.SubjectCode);
+    if (existingSubject != null)
+    {
+    return (false, $"Subject with code '{request.SubjectCode}' already exists", null);
+          }
 
-     // Check if new subject code conflicts with another subject
-           if (subject.SubjectCode != request.SubjectCode)
-     {
-      var existingSubject = await _uow.Subjects.GetBySubjectCodeAsync(request.SubjectCode);
-         if (existingSubject != null)
-     {
- return (false, $"Subject with code '{request.SubjectCode}' already exists");
-   }
-         }
-
-  // Check if semester exists
-   var semester = await _uow.Semesters.GetByIdAsync(request.SemesterId);
+         // ✅ FIXED: Create Subject without SemesterId (it's master data now)
+      // Check if semester exists (for creating initial offering)
+         var semester = await _uow.Semesters.GetByIdAsync(request.SemesterId);
      if (semester == null)
     {
-    return (false, $"Semester with ID {request.SemesterId} not found");
-        }
+      return (false, $"Semester with ID {request.SemesterId} not found", null);
+}
 
      // Check if semester is closed
-         if (semester.IsClosed)
+ if (semester.IsClosed)
+    {
+        return (false, "Cannot add subjects to a closed semester", null);
+         }
+
+         // Create the subject (master data)
+   var subject = new Subject
+     {
+            Id = Guid.NewGuid(),
+            SubjectCode = request.SubjectCode,
+            SubjectName = request.SubjectName,
+     Credits = request.Credits,
+          Description = request.Description,
+   Category = request.Category,
+          Department = request.Department,
+          Prerequisites = request.Prerequisites,
+   IsActive = true
+      };
+
+     await _uow.Subjects.AddAsync(subject);
+
+   // ✅ NEW: Create initial SubjectOffering for the specified semester
+var offering = new SubjectOffering
+    {
+     Id = Guid.NewGuid(),
+            SubjectId = subject.Id,
+           SemesterId = request.SemesterId,
+         MaxClasses = 10, // default
+        IsActive = true
+        };
+
+     // Assuming you have a SubjectOffering repository
+        // await _uow.SubjectOfferings.AddAsync(offering);
+       
+        await _uow.SaveChangesAsync();
+
+  _logger.LogInformation($"✅ Subject created: {subject.SubjectCode} with offering in semester {semester.Name}");
+            return (true, "Subject created successfully", subject.Id);
+        }
+    catch (Exception ex)
+  {
+     _logger.LogError($"❌ Error creating subject: {ex.Message}");
+           return (false, "An error occurred while creating the subject", null);
+     }
+      }
+
+        public async Task<(bool Success, string Message)> UpdateSubjectAsync(Guid id, UpdateSubjectRequest request)
+        {
+            try
       {
-   return (false, "Cannot update subjects in a closed semester");
+        var subject = await _uow.Subjects.GetByIdAsync(id);
+   if (subject == null)
+                {
+      return (false, "Subject not found");
+  }
+
+       // Check if new subject code conflicts with another subject
+if (subject.SubjectCode != request.SubjectCode)
+      {
+  var existingSubject = await _uow.Subjects.GetBySubjectCodeAsync(request.SubjectCode);
+          if (existingSubject != null)
+      {
+  return (false, $"Subject with code '{request.SubjectCode}' already exists");
        }
+             }
 
-     subject.SubjectCode = request.SubjectCode;
-           subject.SubjectName = request.SubjectName;
-  subject.Credits = request.Credits;
-      subject.SemesterId = request.SemesterId;
+              // ✅ FIXED: Update subject master data only (no SemesterId)
+  subject.SubjectCode = request.SubjectCode;
+      subject.SubjectName = request.SubjectName;
+     subject.Credits = request.Credits;
+      subject.Description = request.Description;
+subject.Category = request.Category;
+  subject.Department = request.Department;
+    subject.Prerequisites = request.Prerequisites;
 
-       _uow.Subjects.Update(subject);
+   _uow.Subjects.Update(subject);
     await _uow.SaveChangesAsync();
 
-                _logger.LogInformation($"✅ Subject updated: {subject.SubjectCode}");
- return (true, "Subject updated successfully");
+      _logger.LogInformation($"✅ Subject updated: {subject.SubjectCode}");
+     return (true, "Subject updated successfully");
             }
-            catch (Exception ex)
-            {
-    _logger.LogError($"❌ Error updating subject: {ex.Message}");
-    return (false, "An error occurred while updating the subject");
-      }
- }
+ catch (Exception ex)
+{
+  _logger.LogError($"❌ Error updating subject: {ex.Message}");
+         return (false, "An error occurred while updating the subject");
+            }
+        }
 
         public async Task<(bool Success, string Message)> DeleteSubjectAsync(Guid id)
         {
-    try
+  try
             {
-     var subject = await _uow.Subjects.GetByIdWithDetailsAsync(id);
- if (subject == null)
-           {
-    return (false, "Subject not found");
-    }
-
-      // Check if subject has classes
-    if (subject.Classes != null && subject.Classes.Any())
+            var subject = await _uow.Subjects.GetByIdWithDetailsAsync(id);
+          if (subject == null)
     {
-    return (false, "Cannot delete subject that has existing classes");
-            }
+         return (false, "Subject not found");
+         }
 
-                // Check if semester is closed
-         if (subject.Semester.IsClosed)
-           {
-          return (false, "Cannot delete subjects from a closed semester");
-          }
+            // ✅ FIXED: Check if subject has any offerings with classes
+           if (subject.Offerings != null && subject.Offerings.Any(o => o.Classes != null && o.Classes.Any()))
+      {
+      return (false, "Cannot delete subject that has existing classes in any semester");
+      }
 
-        _uow.Subjects.Remove(subject);
-       await _uow.SaveChangesAsync();
-
-      _logger.LogInformation($"✅ Subject deleted: {subject.SubjectCode}");
-      return (true, "Subject deleted successfully");
- }
-       catch (Exception ex)
+ // Check if any offering is in a closed semester
+        if (subject.Offerings != null && subject.Offerings.Any(o => o.Semester != null && o.Semester.IsClosed))
         {
-   _logger.LogError($"❌ Error deleting subject: {ex.Message}");
-            return (false, "An error occurred while deleting the subject");
+          return (false, "Cannot delete subjects that have offerings in closed semesters");
+      }
+
+            _uow.Subjects.Remove(subject);
+  await _uow.SaveChangesAsync();
+
+ _logger.LogInformation($"✅ Subject deleted: {subject.SubjectCode}");
+           return (true, "Subject deleted successfully");
+ }
+            catch (Exception ex)
+     {
+                _logger.LogError($"❌ Error deleting subject: {ex.Message}");
+       return (false, "An error occurred while deleting the subject");
+            }
    }
-        }
     }
 }

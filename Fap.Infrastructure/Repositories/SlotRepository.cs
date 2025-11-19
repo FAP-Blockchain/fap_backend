@@ -18,7 +18,11 @@ namespace Fap.Infrastructure.Repositories
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
                 .Include(s => s.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(s => s.TimeSlot)
                 .Include(s => s.SubstituteTeacher)
                     .ThenInclude(t => t.User)
@@ -42,7 +46,11 @@ namespace Fap.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(s => s.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(s => s.TimeSlot)
                 .Include(s => s.SubstituteTeacher)
                     .ThenInclude(t => t.User)
@@ -56,7 +64,11 @@ namespace Fap.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(s => s.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(s => s.Class)
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
@@ -73,7 +85,11 @@ namespace Fap.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(s => s.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(s => s.Class)
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
@@ -90,7 +106,11 @@ namespace Fap.Infrastructure.Repositories
             var today = DateTime.UtcNow.Date;
             return await _dbSet
                 .Include(s => s.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(s => s.TimeSlot)
                 .Include(s => s.SubstituteTeacher)
                     .ThenInclude(t => t.User)

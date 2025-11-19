@@ -1,4 +1,4 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +14,10 @@ namespace Fap.Infrastructure.Repositories
         public async Task<Class?> GetByClassCodeAsync(string classCode)
         {
             return await _dbSet
-                .Include(c => c.Subject)
+                .Include(c => c.SubjectOffering)  // ✅ CHANGED
+                   .ThenInclude(so => so.Subject)
+                .Include(c => c.SubjectOffering)
+                   .ThenInclude(so => so.Semester)
                 .Include(c => c.Teacher)
                     .ThenInclude(t => t.User)
                 .FirstOrDefaultAsync(c => c.ClassCode == classCode);
@@ -23,8 +26,10 @@ namespace Fap.Infrastructure.Repositories
         public async Task<Class?> GetByIdWithDetailsAsync(Guid id)
         {
             return await _dbSet
-                .Include(c => c.Subject)
-                    .ThenInclude(s => s.Semester)
+                .Include(c => c.SubjectOffering)  // ✅ CHANGED
+                    .ThenInclude(so => so.Subject)
+                .Include(c => c.SubjectOffering)
+                    .ThenInclude(so => so.Semester)
                 .Include(c => c.Teacher)
                     .ThenInclude(t => t.User)
                 .Include(c => c.Members)
@@ -46,8 +51,10 @@ namespace Fap.Infrastructure.Repositories
         public async Task<IEnumerable<Class>> GetAllWithDetailsAsync()
         {
             return await _dbSet
-                .Include(c => c.Subject)
-                    .ThenInclude(s => s.Semester)
+                .Include(c => c.SubjectOffering)  // ✅ CHANGED
+                    .ThenInclude(so => so.Subject)
+                .Include(c => c.SubjectOffering)
+                    .ThenInclude(so => so.Semester)
                 .Include(c => c.Teacher)
                     .ThenInclude(t => t.User)
                 .Include(c => c.Members)
@@ -68,8 +75,10 @@ namespace Fap.Infrastructure.Repositories
             string? sortOrder)
         {
             var query = _dbSet
-                .Include(c => c.Subject)
-                    .ThenInclude(s => s.Semester)
+                .Include(c => c.SubjectOffering)  // ✅ CHANGED
+                    .ThenInclude(so => so.Subject)
+                .Include(c => c.SubjectOffering)
+                    .ThenInclude(so => so.Semester)
                 .Include(c => c.Teacher)
                     .ThenInclude(t => t.User)
                 .Include(c => c.Members)
@@ -85,7 +94,7 @@ namespace Fap.Infrastructure.Repositories
 
             if (Guid.TryParse(subjectId, out var subjectGuid))
             {
-                query = query.Where(c => c.SubjectId == subjectGuid);
+                query = query.Where(c => c.SubjectOffering.SubjectId == subjectGuid);  // ✅ CHANGED
             }
 
             if (Guid.TryParse(teacherId, out var teacherGuid))
@@ -95,7 +104,7 @@ namespace Fap.Infrastructure.Repositories
 
             if (Guid.TryParse(semesterId, out var semesterGuid))
             {
-                query = query.Where(c => c.Subject.SemesterId == semesterGuid);
+                query = query.Where(c => c.SubjectOffering.SemesterId == semesterGuid);  // ✅ CHANGED
             }
 
             // Get total count
@@ -108,8 +117,8 @@ namespace Fap.Infrastructure.Repositories
                     ? query.OrderByDescending(c => c.ClassCode)
                     : query.OrderBy(c => c.ClassCode),
                 "subjectname" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(c => c.Subject.SubjectName)
-                    : query.OrderBy(c => c.Subject.SubjectName),
+                    ? query.OrderByDescending(c => c.SubjectOffering.Subject.SubjectName)  // ✅ CHANGED
+                    : query.OrderBy(c => c.SubjectOffering.Subject.SubjectName),  // ✅ CHANGED
                 "teachername" => sortOrder?.ToLower() == "desc"
                     ? query.OrderByDescending(c => c.Teacher.User.FullName)
                     : query.OrderBy(c => c.Teacher.User.FullName),
@@ -149,5 +158,38 @@ namespace Fap.Infrastructure.Repositories
 
             return !await query.AnyAsync();
         }
+
+        // ==================== NEW METHODS ====================
+
+        public async Task<bool> IsStudentInClassAsync(Guid classId, Guid studentId)
+        {
+            return await _context.ClassMembers
+                .AnyAsync(cm => cm.ClassId == classId && cm.StudentId == studentId);
+        }
+
+        public async Task<ClassMember?> GetClassMemberAsync(Guid classId, Guid studentId)
+        {
+            return await _context.ClassMembers
+                .Include(cm => cm.Student)
+                    .ThenInclude(s => s.User)
+                .FirstOrDefaultAsync(cm => cm.ClassId == classId && cm.StudentId == studentId);
+        }
+
+        public async Task AddStudentToClassAsync(ClassMember classMember)
+        {
+            await _context.ClassMembers.AddAsync(classMember);
+        }
+
+        public async Task RemoveStudentFromClassAsync(ClassMember classMember)
+        {
+         _context.ClassMembers.Remove(classMember);
+        }
+
+        public async Task<int> GetCurrentStudentCountAsync(Guid classId)
+        {
+            return await _context.ClassMembers
+                .Where(cm => cm.ClassId == classId)
+     .CountAsync();
+    }
     }
 }

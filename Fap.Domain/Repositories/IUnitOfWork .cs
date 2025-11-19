@@ -14,6 +14,7 @@ namespace Fap.Domain.Repositories
         IOtpRepository Otps { get; }
         IClassRepository Classes { get; }
         ISubjectRepository Subjects { get; }
+        ISubjectOfferingRepository SubjectOfferings { get; } // ✅ NEW
         ITimeSlotRepository TimeSlots { get; }
         ISemesterRepository Semesters { get; }
         IEnrollRepository Enrolls { get; }

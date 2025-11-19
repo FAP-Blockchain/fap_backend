@@ -188,7 +188,7 @@ namespace Fap.Api.Services
                 // 4️⃣ Tạo User bằng AutoMapper
                 var user = _mapper.Map<User>(request);
                 user.Id = Guid.NewGuid();
-                user.PasswordHash = _hasher.HashPassword(null, request.Password);
+                user.PasswordHash = _hasher.HashPassword(user, request.Password);
                 user.RoleId = role.Id;
 
                 await _uow.Users.AddAsync(user);
@@ -315,7 +315,8 @@ namespace Fap.Api.Services
 
         private string GenerateJwtToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var jwtKey = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key configuration is missing");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]

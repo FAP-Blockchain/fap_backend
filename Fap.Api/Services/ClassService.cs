@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Class;
 using Fap.Domain.DTOs.Common;
@@ -88,11 +88,11 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 2. Validate Subject exists
-                var subject = await _uow.Subjects.GetByIdAsync(request.SubjectId);
-                if (subject == null)
+                // ✅ FIXED: 2. Validate SubjectOffering exists (not Subject directly)
+                var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(request.SubjectOfferingId);
+                if (subjectOffering == null)
                 {
-                    response.Errors.Add($"Subject with ID '{request.SubjectId}' not found");
+                    response.Errors.Add($"Subject offering with ID '{request.SubjectOfferingId}' not found");
                     response.Message = "Class creation failed";
                     return response;
                 }
@@ -106,12 +106,12 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 4. Create new Class
+                // ✅ FIXED: 4. Create new Class with SubjectOfferingId
                 var newClass = new Domain.Entities.Class
                 {
                     Id = Guid.NewGuid(),
                     ClassCode = request.ClassCode,
-                    SubjectId = request.SubjectId,
+                    SubjectOfferingId = request.SubjectOfferingId,
                     TeacherUserId = request.TeacherId
                 };
 
@@ -163,11 +163,11 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 3. Validate Subject exists
-                var subject = await _uow.Subjects.GetByIdAsync(request.SubjectId);
-                if (subject == null)
+                // ✅ FIXED: 3. Validate SubjectOffering exists (not Subject directly)
+                var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(request.SubjectOfferingId);
+                if (subjectOffering == null)
                 {
-                    response.Errors.Add($"Subject with ID '{request.SubjectId}' not found");
+                    response.Errors.Add($"Subject offering with ID '{request.SubjectOfferingId}' not found");
                     response.Message = "Class update failed";
                     return response;
                 }
@@ -181,9 +181,9 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 5. Update class
+                // ✅ FIXED: 5. Update class with SubjectOfferingId
                 existingClass.ClassCode = request.ClassCode;
-                existingClass.SubjectId = request.SubjectId;
+                existingClass.SubjectOfferingId = request.SubjectOfferingId;
                 existingClass.TeacherUserId = request.TeacherId;
 
                 _uow.Classes.Update(existingClass);
@@ -191,13 +191,13 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "Class updated successfully";
-                _logger.LogInformation($"? Class {id} updated successfully");
+                _logger.LogInformation($"✅ Class {id} updated successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error updating class {id}: {ex.Message}");
+                _logger.LogError($"❌ Error updating class {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Class update failed";
                 return response;
@@ -283,6 +283,147 @@ namespace Fap.Api.Services
             {
                 _logger.LogError($"? Error getting class roster for {id}: {ex.Message}");
                 throw;
+            }
+        }
+
+        // ==================== ASSIGN STUDENTS TO CLASS ====================
+        public async Task<AssignStudentsResponse> AssignStudentsToClassAsync(Guid classId, AssignStudentsRequest request)
+        {
+            var response = new AssignStudentsResponse();
+
+            try
+            {
+                // 1. Validate class exists
+                var @class = await _uow.Classes.GetByIdWithDetailsAsync(classId);
+                if (@class == null)
+                {
+                    response.Errors.Add($"Class with ID '{classId}' not found");
+                    response.Message = "Assignment failed";
+                    return response;
+                }
+
+                // 2. Check max enrollment limit
+                var currentStudentCount = await _uow.Classes.GetCurrentStudentCountAsync(classId);
+                var availableSlots = @class.MaxEnrollment - currentStudentCount;
+
+                if (request.StudentIds.Count > availableSlots)
+                {
+                    response.Errors.Add($"Cannot assign {request.StudentIds.Count} students. Only {availableSlots} slots available (Max: {@class.MaxEnrollment}, Current: {currentStudentCount})");
+                    response.Message = "Assignment failed - exceeds max enrollment";
+                    return response;
+                }
+
+                // 3. Process each student
+                var assignedStudents = new List<AssignedStudentInfo>();
+                var failedCount = 0;
+
+                foreach (var studentId in request.StudentIds)
+                {
+                    // Check if student exists
+                    var student = await _uow.Students.GetByIdAsync(studentId);
+                    if (student == null)
+                    {
+                        response.Errors.Add($"Student with ID '{studentId}' not found");
+                        failedCount++;
+                        continue;
+                    }
+
+                    // Check if student is already in class
+                    var isAlreadyInClass = await _uow.Classes.IsStudentInClassAsync(classId, studentId);
+                    if (isAlreadyInClass)
+                    {
+                        response.Errors.Add($"Student '{student.StudentCode}' is already in this class");
+                        failedCount++;
+                        continue;
+                    }
+
+                    // Add student to class
+                    var classMember = new Domain.Entities.ClassMember
+                    {
+                        Id = Guid.NewGuid(),
+                        ClassId = classId,
+                        StudentId = studentId,
+                        JoinedAt = DateTime.UtcNow
+                    };
+
+                    await _uow.Classes.AddStudentToClassAsync(classMember);
+
+                    // Add to response
+                    assignedStudents.Add(new AssignedStudentInfo
+                    {
+                        StudentId = studentId,
+                        StudentCode = student.StudentCode,
+                        StudentName = student.User?.FullName ?? "Unknown",
+                        JoinedAt = classMember.JoinedAt
+                    });
+                }
+
+                // 4. Save changes
+                await _uow.SaveChangesAsync();
+
+                response.Success = assignedStudents.Count > 0;
+                response.TotalAssigned = assignedStudents.Count;
+                response.TotalFailed = failedCount;
+                response.AssignedStudents = assignedStudents;
+                response.Message = assignedStudents.Count > 0
+                    ? $"Successfully assigned {assignedStudents.Count} student(s) to class {@class.ClassCode}"
+                    : "No students were assigned";
+
+                _logger.LogInformation($"✅ Assigned {assignedStudents.Count} students to class {classId}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error assigning students to class {classId}: {ex.Message}");
+                response.Errors.Add($"Internal error: {ex.Message}");
+                response.Message = "Assignment failed";
+                return response;
+            }
+        }
+
+        // ==================== REMOVE STUDENT FROM CLASS ====================
+        public async Task<RemoveStudentResponse> RemoveStudentFromClassAsync(Guid classId, Guid studentId)
+        {
+            var response = new RemoveStudentResponse();
+
+            try
+            {
+                // 1. Validate class exists
+                var @class = await _uow.Classes.GetByIdAsync(classId);
+                if (@class == null)
+                {
+                    response.Errors.Add($"Class with ID '{classId}' not found");
+                    response.Message = "Removal failed";
+                    return response;
+                }
+
+                // 2. Check if student is in class
+                var classMember = await _uow.Classes.GetClassMemberAsync(classId, studentId);
+                if (classMember == null)
+                {
+                    response.Errors.Add($"Student is not enrolled in this class");
+                    response.Message = "Removal failed";
+                    return response;
+                }
+
+                // 3. Remove student from class
+                await _uow.Classes.RemoveStudentFromClassAsync(classMember);
+                await _uow.SaveChangesAsync();
+
+                response.Success = true;
+                response.Message = $"Successfully removed student from class {@class.ClassCode}";
+
+                _logger.LogInformation($"✅ Removed student {studentId} from class {classId}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error removing student {studentId} from class {classId}: {ex.Message}");
+                response.Errors.Add($"Internal error: {ex.Message}");
+                response.Message = "Removal failed";
+                return response;
             }
         }
     }

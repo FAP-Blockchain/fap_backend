@@ -19,5 +19,12 @@ namespace Fap.Domain.Repositories
         );
         Task<List<ClassMember>> GetClassRosterAsync(Guid classId);
         Task<bool> IsClassCodeUniqueAsync(string classCode, Guid? excludeId = null);
+        
+        // ==================== NEW METHODS ====================
+        Task<bool> IsStudentInClassAsync(Guid classId, Guid studentId);
+        Task<ClassMember?> GetClassMemberAsync(Guid classId, Guid studentId);
+        Task AddStudentToClassAsync(ClassMember classMember);
+        Task RemoveStudentFromClassAsync(ClassMember classMember);
+        Task<int> GetCurrentStudentCountAsync(Guid classId);
     }
 }

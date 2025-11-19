@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Semester;
+using Fap.Domain.DTOs.Subject; // ✅ ADD THIS
 using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 
@@ -69,7 +70,7 @@ namespace Fap.Api.Services
                    Name = s.Name,
                    StartDate = s.StartDate,
                    EndDate = s.EndDate,
-                   TotalSubjects = s.Subjects.Count,
+                   TotalSubjects = s.SubjectOfferings.Count, // ✅ FIXED
                    IsActive = s.IsActive,
                    IsClosed = s.IsClosed
                })
@@ -93,19 +94,29 @@ namespace Fap.Api.Services
                 EndDate = semester.EndDate,
                 IsActive = semester.IsActive,
                 IsClosed = semester.IsClosed,
-                TotalSubjects = semester.Subjects?.Count ?? 0,
-                TotalClasses = semester.Subjects?.Sum(s => s.Classes?.Count ?? 0) ?? 0,
-                TotalStudentsEnrolled = semester.Subjects?
-             .SelectMany(s => s.Classes ?? Enumerable.Empty<Class>())
+                TotalSubjects = semester.SubjectOfferings?.Count ?? 0, // ✅ FIXED
+                TotalClasses = semester.SubjectOfferings?.Sum(so => so.Classes?.Count ?? 0) ?? 0, // ✅ FIXED
+                TotalStudentsEnrolled = semester.SubjectOfferings? // ✅ FIXED
+             .SelectMany(so => so.Classes ?? Enumerable.Empty<Class>())
             .Sum(c => c.Members?.Count ?? 0) ?? 0,
-                Subjects = semester.Subjects?.Select(s => new SubjectSummaryDto
+                SubjectOfferings = semester.SubjectOfferings?.Select(so => new SubjectOfferingDto // ✅ FIXED
                 {
-                    Id = s.Id,
-                    SubjectCode = s.SubjectCode,
-                    SubjectName = s.SubjectName,
-                    Credits = s.Credits,
-                    TotalClasses = s.Classes?.Count ?? 0
-                }).ToList() ?? new List<SubjectSummaryDto>()
+                    Id = so.Id,
+                    SubjectId = so.SubjectId,
+                    SubjectCode = so.Subject.SubjectCode,
+                    SubjectName = so.Subject.SubjectName,
+                    Credits = so.Subject.Credits,
+                    SemesterId = so.SemesterId,
+                    SemesterName = semester.Name,
+                    MaxClasses = so.MaxClasses,
+                    SemesterCapacity = so.SemesterCapacity,
+                    RegistrationStartDate = so.RegistrationStartDate,
+                    RegistrationEndDate = so.RegistrationEndDate,
+                    IsActive = so.IsActive,
+                    Notes = so.Notes,
+                    TotalClasses = so.Classes?.Count ?? 0,
+                    TotalStudents = so.Classes?.Sum(c => c.Members?.Count ?? 0) ?? 0
+                }).ToList() ?? new List<SubjectOfferingDto>()
             };
         }
 

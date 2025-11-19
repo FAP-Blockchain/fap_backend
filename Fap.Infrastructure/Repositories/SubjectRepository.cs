@@ -1,4 +1,4 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,19 +14,21 @@ namespace Fap.Infrastructure.Repositories
         public async Task<Subject?> GetBySubjectCodeAsync(string subjectCode)
         {
             return await _dbSet
-                .Include(s => s.Semester)
+                .Include(s => s.Offerings)  // ✅ CHANGED: Include offerings instead of semester
+                .ThenInclude(o => o.Semester)
+                .Include(s => s.SubjectCriterias)
                 .FirstOrDefaultAsync(s => s.SubjectCode == subjectCode);
         }
 
         public async Task<Subject?> GetByIdWithDetailsAsync(Guid id)
         {
             return await _dbSet
-                .Include(s => s.Semester)
-                .Include(s => s.Classes)
-                    .ThenInclude(c => c.Teacher)
-                        .ThenInclude(t => t.User)
-                .Include(s => s.Classes)
-                    .ThenInclude(c => c.Members)
+                .Include(s => s.Offerings)  // ✅ CHANGED: Include offerings
+                .ThenInclude(o => o.Semester)
+                .Include(s => s.Offerings)
+                    .ThenInclude(o => o.Classes)  // ✅ CHANGED: Classes via offerings
+                        .ThenInclude(c => c.Teacher)
+                            .ThenInclude(t => t.User)
                 .Include(s => s.SubjectCriterias)
                 .Include(s => s.Roadmaps)
                 .FirstOrDefaultAsync(s => s.Id == id);
@@ -35,18 +37,25 @@ namespace Fap.Infrastructure.Repositories
         public async Task<IEnumerable<Subject>> GetAllWithDetailsAsync()
         {
             return await _dbSet
-                .Include(s => s.Semester)
-                .Include(s => s.Classes)
+                .Include(s => s.Offerings)  // ✅ CHANGED: Include offerings
+                .ThenInclude(o => o.Semester)
+                .Include(s => s.Offerings)
+                    .ThenInclude(o => o.Classes)
+                .Include(s => s.SubjectCriterias)
                 .OrderBy(s => s.SubjectCode)
                 .ToListAsync();
         }
 
+        // ✅ CHANGED: Get subjects offered in a specific semester
         public async Task<IEnumerable<Subject>> GetBySemesterIdAsync(Guid semesterId)
         {
             return await _dbSet
-                .Include(s => s.Semester)
-                .Include(s => s.Classes)
-                .Where(s => s.SemesterId == semesterId)
+                .Where(s => s.Offerings.Any(o => o.SemesterId == semesterId && o.IsActive))
+                .Include(s => s.Offerings.Where(o => o.SemesterId == semesterId))
+                    .ThenInclude(o => o.Semester)
+                .Include(s => s.Offerings.Where(o => o.SemesterId == semesterId))
+                    .ThenInclude(o => o.Classes)
+                .Include(s => s.SubjectCriterias)
                 .OrderBy(s => s.SubjectCode)
                 .ToListAsync();
         }

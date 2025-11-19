@@ -9,6 +9,7 @@ using Fap.Infrastructure.Data.Seed;
 using Fap.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -69,14 +70,15 @@ builder.Services.AddDbContext<FapDbContext>(opt =>
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();  
-builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();  
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();  
+builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IOtpRepository, OtpRepository>();
 builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+builder.Services.AddScoped<ISubjectOfferingRepository, SubjectOfferingRepository>(); // ✅ NEW
 builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
 builder.Services.AddScoped<IEnrollRepository, EnrollRepository>();
 builder.Services.AddScoped<IGradeRepository, GradeRepository>();
@@ -94,7 +96,7 @@ builder.Services.Configure<BlockchainSettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IStudentService, StudentService>();  
+builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -109,8 +111,11 @@ builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<IGradeComponentService, GradeComponentService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<ISlotService, SlotService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>(); // ✅ NEW - Schedule/Timetable Service
 
-builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(AutoMapperProfile)));
+// Register AutoMapper - scan all Profile classes in the assembly
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+
 
 // ==================================================
 // CORS CONFIGURATION
@@ -122,7 +127,7 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
       .AllowAnyMethod()
               .AllowAnyHeader();
- });
+    });
 
     // PRODUCTION: Chỉ cho phép domain cụ thể
     options.AddPolicy("Production", policy =>
@@ -148,16 +153,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
-{
+        {
             ValidateIssuer = true,
-         ValidateAudience = true,
-        ValidateLifetime = true,
-      ValidateIssuerSigningKey = true,
-      ValidIssuer = builder.Configuration["Jwt:Issuer"],
-      ValidAudience = builder.Configuration["Jwt:Audience"],
-          IssuerSigningKey = new SymmetricSecurityKey(
-      Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
- };
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+      Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key configuration is missing")))
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -174,7 +179,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         Console.WriteLine("Applying migrations...");
-      await db.Database.MigrateAsync();
+        await db.Database.MigrateAsync();
         await DataSeeder.SeedAsync(db);
         Console.WriteLine("Database migration & seeding done!");
     }

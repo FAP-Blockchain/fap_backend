@@ -202,8 +202,8 @@ namespace Fap.Api.Services
                 {
                     ClassId = classEntity.Id,
                     ClassCode = classEntity.ClassCode,
-                    SubjectCode = classEntity.Subject.SubjectCode,
-                    SubjectName = classEntity.Subject.SubjectName,
+                    SubjectCode = classEntity.SubjectOffering.Subject.SubjectCode, // ? FIXED
+                    SubjectName = classEntity.SubjectOffering.Subject.SubjectName, // ? FIXED
                     TeacherName = classEntity.Teacher?.User?.FullName ?? "N/A",
                     Students = new List<StudentGradeInClassDto>()
                 };
@@ -237,7 +237,7 @@ namespace Fap.Api.Services
                     // Calculate average
                     var gradesWithScores = componentGrades.Where(cg => cg.Score.HasValue).ToList();
                     decimal? averageScore = null;
-                    string finalLetterGrade = null;
+                    string? finalLetterGrade = null;
 
                     if (gradesWithScores.Any())
                     {
@@ -246,14 +246,20 @@ namespace Fap.Api.Services
 
                         foreach (var cg in gradesWithScores)
                         {
-                            totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
-                            totalWeight += cg.ComponentWeight;
+                            if (cg.Score.HasValue)
+                            {
+                                totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
+                                totalWeight += cg.ComponentWeight;
+                            }
                         }
 
                         if (totalWeight > 0)
                         {
                             averageScore = totalWeightedScore / totalWeight;
-                            finalLetterGrade = GradeHelper.CalculateLetterGrade(averageScore.Value);
+                            if (averageScore.HasValue)
+                            {
+                                finalLetterGrade = GradeHelper.CalculateLetterGrade(averageScore.Value);
+                            }
                         }
                     }
 
@@ -293,65 +299,71 @@ namespace Fap.Api.Services
                 // Get student's grades
                 var grades = await _uow.Grades.GetGradesByStudentIdAsync(studentId);
 
-                // Filter by semester if requested
-                if (request.SemesterId.HasValue)
-                {
-                    grades = grades.Where(g => g.Subject.SemesterId == request.SemesterId.Value).ToList();
-                }
+                // ?? TODO: Subject no longer has SemesterId - need to filter through Class/Enrollment
+  // Filter by semester if requested
+   if (request.SemesterId.HasValue)
+    {
+   // ? DISABLED: Subject.SemesterId no longer exists
+    // Need to implement filtering through: Grade ? Student ? Enrollment ? Class ? SubjectOffering ? Semester
+_logger.LogWarning("Semester filtering for grades not yet implemented with new Subject model");
+   // grades = grades.Where(g => g.Subject.SemesterId == request.SemesterId.Value).ToList();
+  }
 
-                // Filter by subject if requested
-                if (request.SubjectId.HasValue)
-                {
-                    grades = grades.Where(g => g.SubjectId == request.SubjectId.Value).ToList();
-                }
+   // Filter by subject if requested
+  if (request.SubjectId.HasValue)
+    {
+      grades = grades.Where(g => g.SubjectId == request.SubjectId.Value).ToList();
+ }
 
-                // Group grades by subject
-                var subjectGrades = grades
-                    .GroupBy(g => g.SubjectId)
-                    .Select(group =>
-                    {
-                        var firstGrade = group.First();
-                        var componentGrades = group.Select(g => new ComponentGradeDto
-                        {
-                            GradeId = g.Id,
-                            GradeComponentId = g.GradeComponentId,
-                            ComponentName = g.GradeComponent.Name,
-                            ComponentWeight = g.GradeComponent.WeightPercent,
-                            Score = g.Score,
-                            LetterGrade = g.LetterGrade
-                        }).ToList();
+   // Group grades by subject
+    var subjectGrades = grades
+.GroupBy(g => g.SubjectId)
+.Select(group =>
+   {
+    var firstGrade = group.First();
+  var componentGrades = group.Select(g => new ComponentGradeDto
+      {
+   GradeId = g.Id,
+  GradeComponentId = g.GradeComponentId,
+   ComponentName = g.GradeComponent.Name,
+   ComponentWeight = g.GradeComponent.WeightPercent,
+    Score = g.Score,
+      LetterGrade = g.LetterGrade
+     }).ToList();
 
-                        // Calculate average for subject
-                        decimal totalWeightedScore = 0;
-                        int totalWeight = 0;
+  // Calculate average for subject
+decimal totalWeightedScore = 0;
+ int totalWeight = 0;
 
-                        foreach (var cg in componentGrades)
-                        {
-                            if (cg.Score.HasValue)
-                            {
-                                totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
-                                totalWeight += cg.ComponentWeight;
-                            }
-                        }
+foreach (var cg in componentGrades)
+{
+      if (cg.Score.HasValue)
+   {
+    totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
+   totalWeight += cg.ComponentWeight;
+ }
+     }
 
-                        decimal? averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : null;
-                        string finalLetterGrade = averageScore.HasValue ? GradeHelper.CalculateLetterGrade(averageScore.Value) : null;
+  decimal? averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : null;
+ string? finalLetterGrade = averageScore.HasValue ? GradeHelper.CalculateLetterGrade(averageScore.Value) : null;
 
-                        return new SubjectGradeDto
-                        {
-                            SubjectId = firstGrade.SubjectId,
-                            SubjectCode = firstGrade.Subject.SubjectCode,
-                            SubjectName = firstGrade.Subject.SubjectName,
-                            Credits = firstGrade.Subject.Credits,
-                            SemesterName = firstGrade.Subject.Semester.Name,
-                            ComponentGrades = componentGrades,
-                            AverageScore = averageScore,
-                            FinalLetterGrade = finalLetterGrade
-                        };
-                    })
-                    .ToList();
+    return new SubjectGradeDto
+   {
+  SubjectId = firstGrade.SubjectId,
+SubjectCode = firstGrade.Subject.SubjectCode,
+      SubjectName = firstGrade.Subject.SubjectName,
+   Credits = firstGrade.Subject.Credits,
+ // ?? TODO: Cannot get SemesterName directly from Subject anymore
+      // Need to get from: Grade ? (determine which class/enrollment) ? SubjectOffering ? Semester
+   SemesterName = "N/A", // ? DISABLED: firstGrade.Subject.Semester.Name
+  ComponentGrades = componentGrades,
+    AverageScore = averageScore,
+   FinalLetterGrade = finalLetterGrade
+      };
+   })
+  .ToList();
 
-                // Sort subjects
+  // Sort subjects
                 subjectGrades = request.SortOrder?.ToLower() == "desc"
                     ? subjectGrades.OrderByDescending(s => s.SubjectCode).ToList()
                     : subjectGrades.OrderBy(s => s.SubjectCode).ToList();

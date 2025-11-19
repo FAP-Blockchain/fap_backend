@@ -352,6 +352,6 @@ namespace Fap.Api.Controllers
     // Helper DTO for cancel request
     public class CancelSlotRequest
     {
-        public string Reason { get; set; }
+        public required string Reason { get; set; }
     }
 }

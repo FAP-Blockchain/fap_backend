@@ -9,8 +9,9 @@ namespace Fap.Domain.DTOs.Class
         [Required, MaxLength(50)]
         public string ClassCode { get; set; }
 
+        // ? Only SubjectOfferingId - it contains Subject info via navigation
         [Required]
-        public Guid SubjectId { get; set; }
+        public Guid SubjectOfferingId { get; set; }
 
         [Required]
         public Guid TeacherId { get; set; }
@@ -21,8 +22,9 @@ namespace Fap.Domain.DTOs.Class
         [Required, MaxLength(50)]
         public string ClassCode { get; set; }
 
+        // ? Only SubjectOfferingId - it contains Subject info via navigation
         [Required]
-        public Guid SubjectId { get; set; }
+        public Guid SubjectOfferingId { get; set; }
 
         [Required]
         public Guid TeacherId { get; set; }
@@ -52,5 +54,30 @@ namespace Fap.Domain.DTOs.Class
         public int Page { get; set; }
         public int PageSize { get; set; }
         public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    }
+
+    // ==================== ASSIGN STUDENTS TO CLASS ====================
+
+    public class AssignStudentsRequest
+    {
+        [Required]
+        public List<Guid> StudentIds { get; set; } = new();
+    }
+
+    public class AssignStudentsResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int TotalAssigned { get; set; }
+        public int TotalFailed { get; set; }
+        public List<string> Errors { get; set; } = new();
+        public List<AssignedStudentInfo> AssignedStudents { get; set; } = new();
+    }
+
+    public class RemoveStudentResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<string> Errors { get; set; } = new();
     }
 }

@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fap.Domain.Entities
 {
@@ -17,27 +13,33 @@ namespace Fap.Domain.Entities
         [Required, MaxLength(50)]
         public string ClassCode { get; set; }
 
+        // ✅ CHANGED: Link to SubjectOffering instead of Subject directly
         [Required]
-        public Guid SubjectId { get; set; }
-        [ForeignKey(nameof(SubjectId))]
-        public Subject Subject { get; set; }
+        public Guid SubjectOfferingId { get; set; }
+
+        [ForeignKey(nameof(SubjectOfferingId))]
+        public virtual SubjectOffering SubjectOffering { get; set; }
+
 
         // ✅ Giáo viên dạy lớp này
         [Required]
         public Guid TeacherUserId { get; set; }
+
         [ForeignKey(nameof(TeacherUserId))]
-        public Teacher Teacher { get; set; }
+        public virtual Teacher Teacher { get; set; }
 
         // ✅ Số lượng sinh viên tối đa
         [Range(1, 500)]
         public int MaxEnrollment { get; set; } = 40; // Mặc định 40 sinh viên
 
-        // ✅ Sinh viên trong lớp
-        public virtual ICollection<ClassMember> Members { get; set; }
+        public bool IsActive { get; set; } = true;
 
-        // ✅ Đăng ký lớp
-        public virtual ICollection<Enroll> Enrolls { get; set; }
-        // ✅ Buổi học trong lớp
-        public virtual ICollection<Slot> Slots { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // ✅ Navigation properties
+        public virtual ICollection<ClassMember> Members { get; set; } = new List<ClassMember>();
+        public virtual ICollection<Enroll> Enrolls { get; set; } = new List<Enroll>();
+        public virtual ICollection<Slot> Slots { get; set; } = new List<Slot>();
     }
 }

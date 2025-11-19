@@ -1,4 +1,4 @@
-using Fap.Domain.Entities;
+﻿using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +17,11 @@ namespace Fap.Infrastructure.Repositories
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
                 .Include(e => e.Class)
-                    .ThenInclude(c => c.Subject)
-                        .ThenInclude(s => s.Semester)
+                    .ThenInclude(c => c.SubjectOffering)  // ✅ CHANGED
+                        .ThenInclude(so => so.Subject)
+                .Include(e => e.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(e => e.Class)
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
@@ -40,7 +43,11 @@ namespace Fap.Infrastructure.Repositories
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
                 .Include(e => e.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)  // ✅ CHANGED
+                        .ThenInclude(so => so.Subject)
+                .Include(e => e.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(e => e.Class)
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
@@ -110,8 +117,11 @@ namespace Fap.Infrastructure.Repositories
         {
             var query = _dbSet
                 .Include(e => e.Class)
-                    .ThenInclude(c => c.Subject)
-                        .ThenInclude(s => s.Semester)
+                    .ThenInclude(c => c.SubjectOffering)  // ✅ CHANGED
+                        .ThenInclude(so => so.Subject)
+                .Include(e => e.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Include(e => e.Class)
                     .ThenInclude(c => c.Teacher)
                         .ThenInclude(t => t.User)
@@ -120,7 +130,7 @@ namespace Fap.Infrastructure.Repositories
 
             // Filters
             if (semesterId.HasValue)
-                query = query.Where(e => e.Class.Subject.SemesterId == semesterId.Value);
+                query = query.Where(e => e.Class.SubjectOffering.SemesterId == semesterId.Value);  // ✅ CHANGED
 
             if (isApproved.HasValue)
                 query = query.Where(e => e.IsApproved == isApproved.Value);
@@ -139,16 +149,17 @@ namespace Fap.Infrastructure.Repositories
                     : query.OrderBy(e => e.Class.ClassCode),
 
                 "subjectname" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.Class.Subject.SubjectName)
-                    : query.OrderBy(e => e.Class.Subject.SubjectName),
+                    ? query.OrderByDescending(e => e.Class.SubjectOffering.Subject.SubjectName)  // ✅ CHANGED
+                    : query.OrderBy(e => e.Class.SubjectOffering.Subject.SubjectName),  // ✅ CHANGED
 
                 "semester" => sortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.Class.Subject.Semester.Name)
-                    : query.OrderBy(e => e.Class.Subject.Semester.Name),
+                    ? query.OrderByDescending(e => e.Class.SubjectOffering.Semester.Name)  // ✅ CHANGED
+                    : query.OrderBy(e => e.Class.SubjectOffering.Semester.Name),  // ✅ CHANGED
 
                 _ => query.OrderByDescending(e => e.RegisteredAt)
             };
 
+            // Pagination
             var enrollments = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -159,43 +170,64 @@ namespace Fap.Infrastructure.Repositories
 
         public async Task<bool> IsStudentEnrolledInClassAsync(Guid studentId, Guid classId)
         {
-            return await _dbSet.AnyAsync(e =>
-                e.StudentId == studentId &&
-                e.ClassId == classId);
+            return await _dbSet
+                .AnyAsync(e => e.StudentId == studentId && e.ClassId == classId);
         }
 
+        public async Task<bool> IsStudentEnrolledInSubjectAsync(Guid studentId, Guid subjectId, Guid semesterId)
+        {
+            // Get all class IDs for this subject in this semester
+            var classIds = await _context.Classes
+                .Where(c => c.SubjectOffering.SubjectId == subjectId &&  // ✅ CHANGED
+                            c.SubjectOffering.SemesterId == semesterId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            return await _dbSet
+                .AnyAsync(e => e.StudentId == studentId && classIds.Contains(e.ClassId));
+        }
+
+        // ✅ NEW: Get enrollments by class ID
         public async Task<List<Enroll>> GetEnrollmentsByClassIdAsync(Guid classId)
         {
             return await _dbSet
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
+                .Include(e => e.Class)
                 .Where(e => e.ClassId == classId)
-                .OrderByDescending(e => e.RegisteredAt)
+                .OrderBy(e => e.RegisteredAt)
                 .ToListAsync();
         }
 
+        // ✅ NEW: Get enrollments by student ID
         public async Task<List<Enroll>> GetEnrollmentsByStudentIdAsync(Guid studentId)
         {
             return await _dbSet
                 .Include(e => e.Class)
-                    .ThenInclude(c => c.Subject)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Subject)
+                .Include(e => e.Class)
+                    .ThenInclude(c => c.SubjectOffering)
+                        .ThenInclude(so => so.Semester)
                 .Where(e => e.StudentId == studentId)
                 .OrderByDescending(e => e.RegisteredAt)
                 .ToListAsync();
         }
 
+        // ✅ NEW: Get pending enrollments count
         public async Task<int> GetPendingEnrollmentsCountAsync(Guid classId)
         {
-            return await _dbSet.CountAsync(e =>
-                e.ClassId == classId &&
-                e.IsApproved == false);
+            return await _dbSet
+                .Where(e => e.ClassId == classId && !e.IsApproved)
+                .CountAsync();
         }
 
+        // ✅ NEW: Get approved enrollments count
         public async Task<int> GetApprovedEnrollmentsCountAsync(Guid classId)
         {
-            return await _dbSet.CountAsync(e =>
-                e.ClassId == classId &&
-                e.IsApproved == true);
+            return await _dbSet
+                .Where(e => e.ClassId == classId && e.IsApproved)
+                .CountAsync();
         }
     }
 }

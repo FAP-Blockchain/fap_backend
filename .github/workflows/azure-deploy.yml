@@ -1,4 +1,4 @@
-﻿name: Deploy FAP API to Azure
+﻿name: Deploy FAP API to Azure with DB Migrations
 
 on:
   push:
@@ -24,6 +24,11 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: 🛠️ Install EF Core Tools
+      run: |
+        dotnet tool install --global dotnet-ef --version 8.0.*
+        echo "$(dotnet tool list -g | grep dotnet-ef)"
+    
     - name: 📦 Restore dependencies
       run: dotnet restore
       
@@ -33,6 +38,44 @@ jobs:
     - name: 🧪 Run tests
       run: dotnet test --no-build --verbosity normal --configuration Release
       continue-on-error: true
+
+    - name: 🗄️ Apply Database Migrations
+      id: migrations
+      run: |
+        echo "🔄 Running database migrations to Azure SQL..."
+        echo "⚠️ Database may take ~30 seconds to resume if paused..."
+        
+        # Run migrations with retry logic
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+      
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+          
+          if dotnet ef database update \
+            --project Fap.Infrastructure/Fap.Infrastructure.csproj \
+            --startup-project Fap.Api/Fap.Api.csproj \
+            --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}" \
+            --verbose; then
+            
+            echo "✅ Migrations completed successfully!"
+            echo "migration_status=success" >> $GITHUB_OUTPUT
+            break
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Migration failed. Retrying in 30 seconds (database may be pausing/resuming)..."
+              sleep 30
+            else
+              echo "❌ Migration failed after $MAX_RETRIES attempts"
+              echo "migration_status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+        done
+      continue-on-error: false
+      env:
+        DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
     - name: 📤 Publish application
       run: |
@@ -48,6 +91,72 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ${{ github.workspace }}/publish
 
+    # ✅ NEW STEP: Auto-seed database after deployment
+    - name: 🌱 Seed Database
+      if: success()
+      run: |
+        echo "=========================================="
+        echo "🌱 Starting database seeding process..."
+        echo "=========================================="
+        
+        # Wait for app to fully start
+        echo "⏳ Waiting 20 seconds for API to initialize..."
+        sleep 20
+        
+        # Seed with retry logic
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo ""
+          echo "🔄 Seed attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+          
+          # Call seed endpoint
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/admin/seed-database" \
+            -H "X-Seed-Secret: ${{ secrets.SEED_SECRET_KEY }}" \
+            -H "Content-Type: application/json")
+        
+          # Extract status code (last line)
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          # Extract body (everything except last line)
+          HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+          
+          echo "📊 Response Status: $HTTP_STATUS"
+          echo "📄 Response Body: $HTTP_BODY"
+        
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo ""
+            echo "=========================================="
+            echo "✅ Database seeding completed successfully!"
+            echo "=========================================="
+            exit 0
+          elif [ "$HTTP_STATUS" = "401" ]; then
+            echo ""
+            echo "=========================================="
+            echo "❌ Unauthorized - Invalid SEED_SECRET_KEY"
+            echo "Please check GitHub Secrets configuration"
+            echo "=========================================="
+            exit 1
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Seeding failed (HTTP $HTTP_STATUS). Retrying in 15 seconds..."
+              sleep 15
+            else
+              echo ""
+              echo "=========================================="
+              echo "⚠️ Seeding failed after $MAX_RETRIES attempts (HTTP $HTTP_STATUS)"
+              echo "This may be normal if data already exists"
+              echo "Check application logs for details"
+              echo "=========================================="
+              # Don't fail deployment if seeding fails (data may already exist)
+              exit 0
+            fi
+          fi
+        done
+      continue-on-error: true  # Không fail deployment nếu seed fails
+
     - name: ✅ Deployment completed successfully
       if: success()
       run: |
@@ -55,6 +164,7 @@ jobs:
         echo "✅ Deployment successful!"
         echo "🌐 API URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
         echo "📊 Swagger: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/swagger"
+        echo "🔧 Admin Health: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/admin/health"
         echo "📅 Deployed at: $(date)"
         echo "🔖 Commit: ${{ github.sha }}"
         echo "👤 Author: ${{ github.actor }}"
