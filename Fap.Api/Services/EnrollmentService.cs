@@ -13,15 +13,18 @@ namespace Fap.Api.Services
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<EnrollmentService> _logger;
+        private readonly IStudentRoadmapService _roadmapService;
 
         public EnrollmentService(
-            IUnitOfWork uow,
-            IMapper mapper,
-            ILogger<EnrollmentService> logger)
+                  IUnitOfWork uow,
+           IMapper mapper,
+              ILogger<EnrollmentService> logger,
+         IStudentRoadmapService roadmapService)
         {
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
+            _roadmapService = roadmapService;
         }
 
         public async Task<EnrollmentResponse> CreateEnrollmentAsync(CreateEnrollmentRequest request)
@@ -48,25 +51,42 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 3. ✅ NEW: Check if student is already a member of the class (in ClassMembers table)
+                // 3. Get subject information via SubjectOffering
+                var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(classEntity.SubjectOfferingId);
+                if (subjectOffering == null)
+                {
+                    response.Errors.Add($"Subject offering not found for class '{request.ClassId}'");
+                    response.Message = "Enrollment creation failed";
+                    return response;
+                }
+
+                var subject = await _uow.Subjects.GetByIdAsync(subjectOffering.SubjectId);
+                if (subject == null)
+                {
+                    response.Errors.Add($"Subject not found for class '{request.ClassId}'");
+                    response.Message = "Enrollment creation failed";
+                    return response;
+                }
+
+                // 4. ✅ NEW: Check if student is already a member of the class (in ClassMembers table)
                 var isAlreadyMember = await _uow.ClassMembers.IsStudentInClassAsync(
-                    request.ClassId,
-                    request.StudentId);
+              request.ClassId,
+                 request.StudentId);
 
                 if (isAlreadyMember)
                 {
                     response.Errors.Add("Student is already a member of this class");
                     response.Message = "Enrollment creation failed - Student already enrolled";
                     _logger.LogWarning(
-                        "Enrollment attempt rejected: Student {StudentId} is already a member of class {ClassId}",
-                        request.StudentId, request.ClassId);
+                          "Enrollment attempt rejected: Student {StudentId} is already a member of class {ClassId}",
+                     request.StudentId, request.ClassId);
                     return response;
                 }
 
-                // 4. Check if student has pending enrollment request
+                // 5. Check if student has pending enrollment request
                 var isAlreadyEnrolled = await _uow.Enrolls.IsStudentEnrolledInClassAsync(
-                    request.StudentId,
-                    request.ClassId);
+                      request.StudentId,
+                  request.ClassId);
 
                 if (isAlreadyEnrolled)
                 {
@@ -75,7 +95,52 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 5. Create new enrollment request
+                // 6. ✅✅ NEW: Check if subject is in student's roadmap
+                var roadmapEntry = await _uow.StudentRoadmaps.GetByStudentAndSubjectAsync(
+           request.StudentId,
+          subject.Id);
+
+                if (roadmapEntry == null)
+                {
+                    response.Errors.Add($"Subject '{subject.SubjectCode}' is not in your academic roadmap. Please contact academic advisor.");
+                    response.Message = "Enrollment creation failed - Subject not in roadmap";
+                    _logger.LogWarning(
+                      "Enrollment rejected: Subject {SubjectId} not in roadmap for student {StudentId}",
+                         subject.Id, request.StudentId);
+                    return response;
+                }
+
+                // 7. ✅✅ NEW: Check if student already completed this subject
+                if (roadmapEntry.Status == "Completed")
+                {
+                    response.Errors.Add($"You have already completed '{subject.SubjectCode}' with grade {roadmapEntry.LetterGrade}");
+                    response.Message = "Enrollment creation failed - Subject already completed";
+                    return response;
+                }
+
+                // 8. ✅✅ NEW: Check prerequisites
+                var prerequisiteValidation = await ValidatePrerequisitesAsync(request.StudentId, subject);
+                if (!prerequisiteValidation.IsValid)
+                {
+                    response.Errors.AddRange(prerequisiteValidation.Errors);
+                    response.Message = "Enrollment creation failed - Prerequisites not met";
+                    _logger.LogWarning(
+                         "Enrollment rejected: Prerequisites not met for student {StudentId}, subject {SubjectCode}",
+                               request.StudentId, subject.SubjectCode);
+                    return response;
+                }
+
+                // 9. ✅✅ NEW: Check sequence order (warning only, not blocking)
+                var sequenceWarning = await CheckSequenceOrderAsync(request.StudentId, roadmapEntry);
+                if (!string.IsNullOrEmpty(sequenceWarning))
+                {
+                    response.Warnings.Add(sequenceWarning);
+                    _logger.LogInformation(
+                             "Sequence warning for student {StudentId}: {Warning}",
+                   request.StudentId, sequenceWarning);
+                }
+
+                // 10. Create new enrollment request
                 var newEnrollment = new Enroll
                 {
                     Id = Guid.NewGuid(),
@@ -93,8 +158,9 @@ namespace Fap.Api.Services
                 response.EnrollmentId = newEnrollment.Id;
 
                 _logger.LogInformation(
-                    "Student {StudentId} submitted enrollment request for class {ClassId}",
-                    request.StudentId, request.ClassId);
+          "Student {StudentId} submitted enrollment request for class {ClassId} (Subject: {SubjectCode})",
+   request.StudentId, request.ClassId, subject.SubjectCode);
+
                 return response;
             }
             catch (Exception ex)
@@ -128,25 +194,25 @@ namespace Fap.Api.Services
             try
             {
                 var (enrollments, totalCount) = await _uow.Enrolls.GetPagedEnrollmentsAsync(
-                    request.Page,
-                    request.PageSize,
+                request.Page,
+               request.PageSize,
                     request.ClassId,
-                    request.StudentId,
-                    request.IsApproved,
-                    request.RegisteredFrom,
+                       request.StudentId,
+                 request.IsApproved,
+                          request.RegisteredFrom,
                     request.RegisteredTo,
-                    request.SortBy,
-                    request.SortOrder
-                );
+                       request.SortBy,
+               request.SortOrder
+             );
 
                 var enrollmentDtos = _mapper.Map<List<EnrollmentDto>>(enrollments);
 
                 return new PagedResult<EnrollmentDto>(
-                    enrollmentDtos,
+                 enrollmentDtos,
                     totalCount,
-                    request.Page,
-                    request.PageSize
-                );
+               request.Page,
+                  request.PageSize
+                        );
             }
             catch (Exception ex)
             {
@@ -178,8 +244,8 @@ namespace Fap.Api.Services
 
                 // ✅ Check if student is already in class roster (ClassMember)
                 var isAlreadyInRoster = await _uow.ClassMembers.IsStudentInClassAsync(
-                    enrollment.ClassId, enrollment.StudentId);
-                
+    enrollment.ClassId, enrollment.StudentId);
+
                 if (isAlreadyInRoster)
                 {
                     response.Errors.Add("Student is already in the class roster");
@@ -197,7 +263,7 @@ namespace Fap.Api.Services
                 }
 
                 var currentEnrollmentCount = await _uow.ClassMembers.GetClassMemberCountAsync(
-                    enrollment.ClassId);
+                 enrollment.ClassId);
 
                 if (currentEnrollmentCount >= classEntity.MaxEnrollment)
                 {
@@ -220,15 +286,26 @@ namespace Fap.Api.Services
                 };
 
                 await _uow.ClassMembers.AddAsync(classMember);
+
+                // ✅✅✅ NEW: Auto-update roadmap status to InProgress
+                // Get SubjectId from class's SubjectOffering
+                var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(classEntity.SubjectOfferingId);
+                if (subjectOffering != null)
+                {
+                    await _roadmapService.UpdateRoadmapOnEnrollmentAsync(
+                      enrollment.StudentId,
+             subjectOffering.SubjectId);
+                }
+
                 await _uow.SaveChangesAsync();
 
                 response.Success = true;
-                response.Message = "Enrollment approved successfully. Student added to class roster.";
+                response.Message = "Enrollment approved successfully. Student added to class roster and roadmap updated.";
 
                 _logger.LogInformation(
-                    "Enrollment {EnrollmentId} approved. Student {StudentId} added to class {ClassId} roster",
-                    id, enrollment.StudentId, enrollment.ClassId);
-                
+            "Enrollment {EnrollmentId} approved. Student {StudentId} added to class {ClassId} roster. Roadmap updated to InProgress.",
+                       id, enrollment.StudentId, enrollment.ClassId);
+
                 return response;
             }
             catch (Exception ex)
@@ -361,6 +438,84 @@ namespace Fap.Api.Services
                 _logger.LogError(ex, "Error getting student enrollment history for {StudentId}", studentId);
                 throw;
             }
+        }
+
+        // ==================== NEW HELPER METHODS ====================
+
+        /// <summary>
+        /// Validate if student has completed all prerequisite subjects
+        /// </summary>
+        private async Task<(bool IsValid, List<string> Errors)> ValidatePrerequisitesAsync(
+Guid studentId,
+            Subject subject)
+        {
+            var errors = new List<string>();
+
+            // No prerequisites required
+            if (string.IsNullOrWhiteSpace(subject.Prerequisites))
+            {
+                return (true, errors);
+            }
+
+            // Parse prerequisite subject codes
+            var prerequisiteCodes = subject.Prerequisites
+    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+    .Select(p => p.Trim())
+       .ToList();
+
+            if (!prerequisiteCodes.Any())
+            {
+                return (true, errors);
+            }
+
+            // Get student's completed subjects from roadmap
+            var completedSubjects = await _uow.StudentRoadmaps.GetCompletedSubjectsAsync(studentId);
+            var completedSubjectCodes = completedSubjects
+         .Select(r => r.Subject.SubjectCode)
+       .ToHashSet();
+
+            // Check each prerequisite
+            var missingPrerequisites = prerequisiteCodes
+             .Where(code => !completedSubjectCodes.Contains(code))
+        .ToList();
+
+            if (missingPrerequisites.Any())
+            {
+                errors.Add($"Missing prerequisites for '{subject.SubjectCode}': {string.Join(", ", missingPrerequisites)}");
+                errors.Add("You must complete these subjects before enrolling in this class.");
+                return (false, errors);
+            }
+
+            return (true, errors);
+        }
+
+        /// <summary>
+        /// Check if student is enrolling subjects in recommended sequence order
+        /// Returns warning message if out of sequence (non-blocking)
+        /// </summary>
+        private async Task<string?> CheckSequenceOrderAsync(
+          Guid studentId,
+            StudentRoadmap currentRoadmapEntry)
+        {
+            // Get all planned subjects with lower sequence order
+            var earlierPlannedSubjects = await _uow.StudentRoadmaps
+                           .GetStudentRoadmapAsync(studentId);
+
+            var skippedSubjects = earlierPlannedSubjects
+         .Where(r => r.SequenceOrder < currentRoadmapEntry.SequenceOrder
+          && r.Status == "Planned"
+              && r.SemesterId == currentRoadmapEntry.SemesterId)
+             .OrderBy(r => r.SequenceOrder)
+     .ToList();
+
+            if (skippedSubjects.Any())
+            {
+                var skippedCodes = string.Join(", ", skippedSubjects.Select(s => s.Subject.SubjectCode));
+                return $"⚠️ Note: You are skipping earlier subjects in your roadmap: {skippedCodes}. " +
+                 "Consider enrolling in recommended sequence order.";
+            }
+
+            return null;
         }
     }
 }

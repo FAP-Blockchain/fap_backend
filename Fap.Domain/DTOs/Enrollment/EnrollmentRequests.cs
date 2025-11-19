@@ -1,4 +1,4 @@
-using Fap.Domain.DTOs.Common;
+﻿using Fap.Domain.DTOs.Common;
 
 namespace Fap.Domain.DTOs.Enrollment
 {
@@ -16,6 +16,7 @@ namespace Fap.Domain.DTOs.Enrollment
         public string Message { get; set; }
         public Guid? EnrollmentId { get; set; }
         public List<string> Errors { get; set; } = new();
+        public List<string> Warnings { get; set; } = new(); // ✅ NEW: Non-blocking warnings
     }
 
     /// Request to get paginated enrollments with filters
