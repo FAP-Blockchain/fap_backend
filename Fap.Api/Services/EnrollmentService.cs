@@ -30,6 +30,7 @@ namespace Fap.Api.Services
 
             try
             {
+                // 1. Validate student exists
                 var student = await _uow.Students.GetByIdAsync(request.StudentId);
                 if (student == null)
                 {
@@ -38,6 +39,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
+                // 2. Validate class exists
                 var classEntity = await _uow.Classes.GetByIdAsync(request.ClassId);
                 if (classEntity == null)
                 {
@@ -46,17 +48,34 @@ namespace Fap.Api.Services
                     return response;
                 }
 
+                // 3. ✅ NEW: Check if student is already a member of the class (in ClassMembers table)
+                var isAlreadyMember = await _uow.ClassMembers.IsStudentInClassAsync(
+                    request.ClassId,
+                    request.StudentId);
+
+                if (isAlreadyMember)
+                {
+                    response.Errors.Add("Student is already a member of this class");
+                    response.Message = "Enrollment creation failed - Student already enrolled";
+                    _logger.LogWarning(
+                        "Enrollment attempt rejected: Student {StudentId} is already a member of class {ClassId}",
+                        request.StudentId, request.ClassId);
+                    return response;
+                }
+
+                // 4. Check if student has pending enrollment request
                 var isAlreadyEnrolled = await _uow.Enrolls.IsStudentEnrolledInClassAsync(
                     request.StudentId,
                     request.ClassId);
 
                 if (isAlreadyEnrolled)
                 {
-                    response.Errors.Add("Student is already enrolled in this class");
+                    response.Errors.Add("Student already has a pending enrollment request for this class");
                     response.Message = "Enrollment creation failed";
                     return response;
                 }
 
+                // 5. Create new enrollment request
                 var newEnrollment = new Enroll
                 {
                     Id = Guid.NewGuid(),
@@ -70,10 +89,12 @@ namespace Fap.Api.Services
                 await _uow.SaveChangesAsync();
 
                 response.Success = true;
-                response.Message = "Enrollment created successfully. Waiting for approval.";
+                response.Message = "Enrollment request created successfully. Waiting for approval.";
                 response.EnrollmentId = newEnrollment.Id;
 
-                _logger.LogInformation("Student {StudentId} enrolled in class {ClassId}", request.StudentId, request.ClassId);
+                _logger.LogInformation(
+                    "Student {StudentId} submitted enrollment request for class {ClassId}",
+                    request.StudentId, request.ClassId);
                 return response;
             }
             catch (Exception ex)
