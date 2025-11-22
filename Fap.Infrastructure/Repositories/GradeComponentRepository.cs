@@ -18,6 +18,7 @@ namespace Fap.Infrastructure.Repositories
         public async Task<GradeComponent?> GetByIdWithGradesAsync(Guid id)
         {
             return await _dbSet
+                .Include(gc => gc.Subject)
                 .Include(gc => gc.Grades)
                 .FirstOrDefaultAsync(gc => gc.Id == id);
         }
@@ -31,14 +32,8 @@ namespace Fap.Infrastructure.Repositories
         public async Task<List<GradeComponent>> GetAllWithGradeCountAsync()
         {
             return await _dbSet
+                .Include(gc => gc.Subject)
                 .Include(gc => gc.Grades)
-                .Select(gc => new GradeComponent
-                {
-                    Id = gc.Id,
-                    Name = gc.Name,
-                    WeightPercent = gc.WeightPercent,
-                    Grades = gc.Grades
-                })
                 .ToListAsync();
         }
 

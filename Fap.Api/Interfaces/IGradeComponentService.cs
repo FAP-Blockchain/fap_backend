@@ -7,7 +7,7 @@ namespace Fap.Api.Interfaces
 {
     public interface IGradeComponentService
     {
-        Task<List<GradeComponentDto>> GetAllGradeComponentsAsync();
+        Task<List<GradeComponentDto>> GetAllGradeComponentsAsync(Guid? subjectId = null);
 
         Task<GradeComponentDto?> GetGradeComponentByIdAsync(Guid id);
 

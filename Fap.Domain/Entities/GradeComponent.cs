@@ -16,6 +16,11 @@ namespace Fap.Domain.Entities
         [Required, MaxLength(80)] public string Name { get; set; } // Quiz/Midterm/Final
         [Range(0, 100)] public int WeightPercent { get; set; }      // 0..100
 
+        // Foreign key to Subject
+        public Guid SubjectId { get; set; }
+        [ForeignKey(nameof(SubjectId))]
+        public virtual Subject Subject { get; set; }
+
         public virtual ICollection<Grade> Grades { get; set; }
     }
 }

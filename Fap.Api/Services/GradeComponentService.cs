@@ -27,16 +27,26 @@ namespace Fap.Api.Services
             _logger = logger;
         }
 
-        public async Task<List<GradeComponentDto>> GetAllGradeComponentsAsync()
+        public async Task<List<GradeComponentDto>> GetAllGradeComponentsAsync(Guid? subjectId = null)
         {
             try
             {
                 var components = await _uow.GradeComponents.GetAllWithGradeCountAsync();
+                
+                // Filter by SubjectId if provided
+                if (subjectId.HasValue)
+                {
+                    components = components.Where(gc => gc.SubjectId == subjectId.Value).ToList();
+                }
+                
                 return components.Select(gc => new GradeComponentDto
                 {
                     Id = gc.Id,
                     Name = gc.Name,
                     WeightPercent = gc.WeightPercent,
+                    SubjectId = gc.SubjectId,
+                    SubjectCode = gc.Subject?.SubjectCode ?? string.Empty,
+                    SubjectName = gc.Subject?.SubjectName ?? string.Empty,
                     GradeCount = gc.Grades?.Count ?? 0
                 }).ToList();
             }
@@ -59,6 +69,9 @@ namespace Fap.Api.Services
                     Id = component.Id,
                     Name = component.Name,
                     WeightPercent = component.WeightPercent,
+                    SubjectId = component.SubjectId,
+                    SubjectCode = component.Subject?.SubjectCode ?? string.Empty,
+                    SubjectName = component.Subject?.SubjectName ?? string.Empty,
                     GradeCount = component.Grades?.Count ?? 0
                 };
             }
@@ -75,11 +88,24 @@ namespace Fap.Api.Services
 
             try
             {
-                // Check if component with same name already exists
-                var existingComponent = await _uow.GradeComponents.GetByNameAsync(request.Name);
-                if (existingComponent != null)
+                // Validate SubjectId exists
+                var subject = await _uow.Subjects.GetByIdAsync(request.SubjectId);
+                if (subject == null)
                 {
-                    response.Errors.Add($"Grade component with name '{request.Name}' already exists");
+                    response.Errors.Add($"Subject with ID '{request.SubjectId}' not found");
+                    response.Message = "Grade component creation failed";
+                    return response;
+                }
+
+                // Check if component with same name already exists for this subject
+                var existingComponents = await _uow.GradeComponents.GetAllWithGradeCountAsync();
+                var duplicate = existingComponents.FirstOrDefault(gc => 
+                    gc.SubjectId == request.SubjectId && 
+                    gc.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase));
+                    
+                if (duplicate != null)
+                {
+                    response.Errors.Add($"Grade component '{request.Name}' already exists for subject '{subject.SubjectCode}'");
                     response.Message = "Grade component creation failed";
                     return response;
                 }
@@ -88,7 +114,8 @@ namespace Fap.Api.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = request.Name,
-                    WeightPercent = request.WeightPercent
+                    WeightPercent = request.WeightPercent,
+                    SubjectId = request.SubjectId
                 };
 
                 await _uow.GradeComponents.AddAsync(newComponent);
@@ -98,7 +125,7 @@ namespace Fap.Api.Services
                 response.Message = "Grade component created successfully";
                 response.GradeComponentId = newComponent.Id;
 
-                _logger.LogInformation("Grade component created: {ComponentName}", request.Name);
+                _logger.LogInformation("Grade component created: {ComponentName} for Subject {SubjectId}", request.Name, request.SubjectId);
 
                 return response;
             }
@@ -127,17 +154,32 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // Check if another component with same name exists
-                var existingComponent = await _uow.GradeComponents.GetByNameAsync(request.Name);
-                if (existingComponent != null && existingComponent.Id != id)
+                // Validate SubjectId exists
+                var subject = await _uow.Subjects.GetByIdAsync(request.SubjectId);
+                if (subject == null)
                 {
-                    response.Errors.Add($"Grade component with name '{request.Name}' already exists");
+                    response.Errors.Add($"Subject with ID '{request.SubjectId}' not found");
+                    response.Message = "Grade component update failed";
+                    return response;
+                }
+
+                // Check if another component with same name exists for this subject
+                var existingComponents = await _uow.GradeComponents.GetAllWithGradeCountAsync();
+                var duplicate = existingComponents.FirstOrDefault(gc => 
+                    gc.SubjectId == request.SubjectId && 
+                    gc.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase) &&
+                    gc.Id != id);
+                    
+                if (duplicate != null)
+                {
+                    response.Errors.Add($"Grade component '{request.Name}' already exists for subject '{subject.SubjectCode}'");
                     response.Message = "Grade component update failed";
                     return response;
                 }
 
                 component.Name = request.Name;
                 component.WeightPercent = request.WeightPercent;
+                component.SubjectId = request.SubjectId;
 
                 _uow.GradeComponents.Update(component);
                 await _uow.SaveChangesAsync();

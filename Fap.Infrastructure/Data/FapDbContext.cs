@@ -107,6 +107,13 @@ namespace Fap.Infrastructure.Data
                 .HasForeignKey(cm => cm.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ✅ NEW: GradeComponent <-> Subject
+            modelBuilder.Entity<GradeComponent>()
+                .HasOne(gc => gc.Subject)
+                .WithMany()
+                .HasForeignKey(gc => gc.SubjectId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // ✅ NEW: SubjectOffering <-> Subject
             modelBuilder.Entity<SubjectOffering>()
                 .HasOne(so => so.Subject)

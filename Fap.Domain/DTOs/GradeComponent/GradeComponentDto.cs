@@ -8,6 +8,9 @@ namespace Fap.Domain.DTOs.GradeComponent
         public Guid Id { get; set; }
         public string Name { get; set; }
         public int WeightPercent { get; set; }
+        public Guid SubjectId { get; set; }
+        public string SubjectCode { get; set; }
+        public string SubjectName { get; set; }
         public int GradeCount { get; set; }
     }
 
@@ -20,6 +23,9 @@ namespace Fap.Domain.DTOs.GradeComponent
         [Required]
         [Range(0, 100, ErrorMessage = "Weight must be between 0 and 100")]
         public int WeightPercent { get; set; }
+
+        [Required]
+        public Guid SubjectId { get; set; }
     }
 
     public class UpdateGradeComponentRequest
@@ -31,6 +37,9 @@ namespace Fap.Domain.DTOs.GradeComponent
         [Required]
         [Range(0, 100, ErrorMessage = "Weight must be between 0 and 100")]
         public int WeightPercent { get; set; }
+
+        [Required]
+        public Guid SubjectId { get; set; }
     }
 
     public class GradeComponentResponse

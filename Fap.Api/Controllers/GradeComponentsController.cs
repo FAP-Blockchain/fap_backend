@@ -24,14 +24,14 @@ namespace Fap.Api.Controllers
         }
 
         /// <summary>
-        /// GET /api/grade-components - Get all grade components
+        /// GET /api/grade-components - Get all grade components (optionally filter by subject)
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllGradeComponents()
+        public async Task<IActionResult> GetAllGradeComponents([FromQuery] Guid? subjectId = null)
         {
             try
             {
-                var components = await _gradeComponentService.GetAllGradeComponentsAsync();
+                var components = await _gradeComponentService.GetAllGradeComponentsAsync(subjectId);
                 return Ok(components);
             }
             catch (Exception ex)
