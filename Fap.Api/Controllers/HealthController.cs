@@ -15,7 +15,7 @@ public class HealthController : ControllerBase
     }
 
     /// <summary>
-    /// Basic health check endpoint for Docker/Kubernetes
+    /// Basic health check endpoint
     /// </summary>
     [HttpGet]
     public IActionResult Get()

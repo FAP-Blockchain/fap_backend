@@ -27,6 +27,8 @@ namespace Fap.Api.Controllers
         /// GET /api/grade-components - Get all grade components (optionally filter by subject)
         /// </summary>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<GradeComponentDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllGradeComponents([FromQuery] Guid? subjectId = null)
         {
             try
@@ -36,7 +38,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error getting grade components: {ex.Message}");
+                _logger.LogError(ex, "Error getting grade components");
                 return StatusCode(500, new { message = "An error occurred while retrieving grade components" });
             }
         }
@@ -45,6 +47,9 @@ namespace Fap.Api.Controllers
         /// GET /api/grade-components/{id} - Get grade component by ID
         /// </summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(GradeComponentDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetGradeComponentById(Guid id)
         {
             try
@@ -58,7 +63,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error getting grade component {id}: {ex.Message}");
+                _logger.LogError(ex, "Error getting grade component {GradeComponentId}", id);
                 return StatusCode(500, new { message = "An error occurred while retrieving grade component" });
             }
         }
@@ -68,8 +73,14 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(GradeComponentResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateGradeComponent([FromBody] CreateGradeComponentRequest request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
                 var result = await _gradeComponentService.CreateGradeComponentAsync(request);
@@ -85,7 +96,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error creating grade component: {ex.Message}");
+                _logger.LogError(ex, "Error creating grade component");
                 return StatusCode(500, new { message = "An error occurred while creating grade component" });
             }
         }
@@ -95,20 +106,32 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(GradeComponentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateGradeComponent(Guid id, [FromBody] UpdateGradeComponentRequest request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
                 var result = await _gradeComponentService.UpdateGradeComponentAsync(id, request);
 
                 if (!result.Success)
+                {
+                    if (result.Message?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                        return NotFound(result);
+                    
                     return BadRequest(result);
+                }
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error updating grade component {id}: {ex.Message}");
+                _logger.LogError(ex, "Error updating grade component {GradeComponentId}", id);
                 return StatusCode(500, new { message = "An error occurred while updating grade component" });
             }
         }
@@ -118,6 +141,10 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(GradeComponentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteGradeComponent(Guid id)
         {
             try
@@ -125,13 +152,18 @@ namespace Fap.Api.Controllers
                 var result = await _gradeComponentService.DeleteGradeComponentAsync(id);
 
                 if (!result.Success)
+                {
+                    if (result.Message?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                        return NotFound(result);
+                    
                     return BadRequest(result);
+                }
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error deleting grade component {id}: {ex.Message}");
+                _logger.LogError(ex, "Error deleting grade component {GradeComponentId}", id);
                 return StatusCode(500, new { message = "An error occurred while deleting grade component" });
             }
         }

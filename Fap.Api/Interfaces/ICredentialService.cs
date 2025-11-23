@@ -52,7 +52,8 @@ namespace Fap.Api.Interfaces
         // ==================== AUTO-GENERATION (Background Jobs) ====================
 
         Task<CredentialRequestDto?> AutoRequestSubjectCompletionCredentialAsync(Guid studentId, Guid subjectId);
-        Task<CredentialRequestDto?> AutoRequestSemesterCompletionCredentialAsync(Guid studentId, Guid semesterId);
+        // REMOVED: Semester Completion - No longer supported
+        // Task<CredentialRequestDto?> AutoRequestSemesterCompletionCredentialAsync(Guid studentId, Guid semesterId);
         Task<CredentialRequestDto?> AutoRequestRoadmapCompletionCredentialAsync(Guid studentId, Guid roadmapId);
 
         // ==================== TEMPLATES ====================

@@ -90,7 +90,8 @@ namespace Fap.Domain.DTOs.Credential
     {
         public int TotalCredentials { get; set; }
         public int SubjectCompletionCount { get; set; }
-        public int SemesterCompletionCount { get; set; }
+        // REMOVED: SemesterCompletionCount - No longer supported
+        // public int SemesterCompletionCount { get; set; }
         public int RoadmapCompletionCount { get; set; }
         public int PendingRequests { get; set; }
         public List<CredentialDto> RecentCredentials { get; set; } = new();
