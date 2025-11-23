@@ -288,11 +288,45 @@ namespace Fap.Api.Services
 
                 await _uow.ClassMembers.AddAsync(classMember);
 
-                // ✅✅✅ NEW: Auto-update roadmap status to InProgress
-                // Get SubjectId from class's SubjectOffering
+                // ✅✅✅ NEW: Auto-create grade records with null scores for all grade components of the subject
                 var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(classEntity.SubjectOfferingId);
                 if (subjectOffering != null)
                 {
+                    // Get all grade components for this subject
+                    var gradeComponents = await _uow.GradeComponents.FindAsync(gc => gc.SubjectId == subjectOffering.SubjectId);
+                    var gradesCreated = 0;
+
+                    foreach (var component in gradeComponents)
+                    {
+                        // Check if grade already exists (shouldn't happen, but safety check)
+                        var existingGrade = await _uow.Grades.GetGradeByStudentSubjectComponentAsync(
+                            enrollment.StudentId,
+                            subjectOffering.SubjectId,
+                            component.Id);
+
+                        if (existingGrade == null)
+                        {
+                            var grade = new Grade
+                            {
+                                Id = Guid.NewGuid(),
+                                StudentId = enrollment.StudentId,
+                                SubjectId = subjectOffering.SubjectId,
+                                GradeComponentId = component.Id,
+                                Score = null,  // ✅ Initialize with null
+                                LetterGrade = null,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+
+                            await _uow.Grades.AddAsync(grade);
+                            gradesCreated++;
+                        }
+                    }
+
+                    _logger.LogInformation(
+                        "Auto-created {Count} grade records (null scores) for student {StudentId} in subject {SubjectId}",
+                        gradesCreated, enrollment.StudentId, subjectOffering.SubjectId);
+
+                    // ✅ Update roadmap status to InProgress
                     await _roadmapService.UpdateRoadmapOnEnrollmentAsync(
                       enrollment.StudentId,
              subjectOffering.SubjectId);
@@ -301,7 +335,7 @@ namespace Fap.Api.Services
                 await _uow.SaveChangesAsync();
 
                 response.Success = true;
-                response.Message = "Enrollment approved successfully. Student added to class roster and roadmap updated.";
+                response.Message = "Enrollment approved successfully. Student added to class roster, grade records initialized, and roadmap updated.";
 
                 _logger.LogInformation(
             "Enrollment {EnrollmentId} approved. Student {StudentId} added to class {ClassId} roster. Roadmap updated to InProgress.",

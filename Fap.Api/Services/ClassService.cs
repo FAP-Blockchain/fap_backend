@@ -2,6 +2,7 @@
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Class;
 using Fap.Domain.DTOs.Common;
+using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 
 namespace Fap.Api.Services
@@ -382,6 +383,40 @@ namespace Fap.Api.Services
                     };
 
                     await _uow.ClassMembers.AddAsync(classMember);
+
+                    // ✅✅ NEW: Auto-create grade records with null scores for all grade components
+                    var gradeComponents = await _uow.GradeComponents.FindAsync(gc => gc.SubjectId == subjectId);
+                    var gradesCreatedCount = 0;
+                    
+                    foreach (var component in gradeComponents)
+                    {
+                        var existingGrade = await _uow.Grades.GetGradeByStudentSubjectComponentAsync(
+                            studentId, subjectId, component.Id);
+
+                        if (existingGrade == null)
+                        {
+                            var grade = new Grade
+                            {
+                                Id = Guid.NewGuid(),
+                                StudentId = studentId,
+                                SubjectId = subjectId,
+                                GradeComponentId = component.Id,
+                                Score = null,  // ✅ Initialize with null
+                                LetterGrade = null,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+
+                            await _uow.Grades.AddAsync(grade);
+                            gradesCreatedCount++;
+                        }
+                    }
+
+                    if (gradesCreatedCount > 0)
+                    {
+                        _logger.LogInformation(
+                            "Auto-created {Count} grade records for student {StudentCode} in subject {SubjectId}",
+                            gradesCreatedCount, student.StudentCode, subjectId);
+                    }
 
                     // Add to response
                     assignedStudents.Add(new AssignedStudentInfo
