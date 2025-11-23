@@ -22,7 +22,7 @@ namespace Fap.Infrastructure.Repositories
         public async Task<Credential?> GetByIdAsync(Guid id)
         {
             return await _context.Credentials
-                .Include(c => c.Student)
+                .Include(c => c.Student!)
    .ThenInclude(s => s.User)  // ? Include Student.User for FullName
      .Include(c => c.CertificateTemplate)
       .Include(c => c.Subject)
@@ -34,7 +34,7 @@ namespace Fap.Infrastructure.Repositories
         public async Task<IEnumerable<Credential>> GetAllAsync()
   {
             return await _context.Credentials
- .Include(c => c.Student)
+ .Include(c => c.Student!)
           .ThenInclude(s => s.User)  // ? Include Student.User for FullName
            .Include(c => c.CertificateTemplate)
        .ToListAsync();
@@ -43,7 +43,7 @@ namespace Fap.Infrastructure.Repositories
       public async Task<IEnumerable<Credential>> FindAsync(Expression<Func<Credential, bool>> predicate)
   {
      return await _context.Credentials
-    .Include(c => c.Student)
+    .Include(c => c.Student!)
           .ThenInclude(s => s.User)  // ? Include Student.User for FullName
           .Include(c => c.CertificateTemplate)
           .Include(c => c.Subject)

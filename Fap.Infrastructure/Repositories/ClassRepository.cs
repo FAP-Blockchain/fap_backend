@@ -180,9 +180,10 @@ namespace Fap.Infrastructure.Repositories
             await _context.ClassMembers.AddAsync(classMember);
         }
 
-        public async Task RemoveStudentFromClassAsync(ClassMember classMember)
+        public Task RemoveStudentFromClassAsync(ClassMember classMember)
         {
-         _context.ClassMembers.Remove(classMember);
+            _context.ClassMembers.Remove(classMember);
+            return Task.CompletedTask;
         }
 
         public async Task<int> GetCurrentStudentCountAsync(Guid classId)

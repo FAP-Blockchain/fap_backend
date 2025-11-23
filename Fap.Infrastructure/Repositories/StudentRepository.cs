@@ -185,7 +185,7 @@ namespace Fap.Infrastructure.Repositories
         // Step 3: Build query for eligible students
         var query = _context.Students
             .Include(s => s.User)
-            .Include(s => s.Curriculum)
+            .Include(s => s.Curriculum!)
                 .ThenInclude(c => c.CurriculumSubjects)
                     .ThenInclude(cs => cs.Subject)
             .Include(s => s.Grades)
@@ -380,10 +380,10 @@ return (true, reasons);
     {
       return await _dbSet
         .Include(s => s.User)
-        .Include(s => s.Curriculum)
+        .Include(s => s.Curriculum!)
           .ThenInclude(c => c.CurriculumSubjects)
             .ThenInclude(cs => cs.Subject)
-        .Include(s => s.Curriculum)
+        .Include(s => s.Curriculum!)
           .ThenInclude(c => c.CurriculumSubjects)
             .ThenInclude(cs => cs.PrerequisiteSubject)
         .Include(s => s.Grades)

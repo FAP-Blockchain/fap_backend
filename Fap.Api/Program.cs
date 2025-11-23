@@ -96,6 +96,7 @@ builder.Services.Configure<OtpSettings>(builder.Configuration.GetSection("OtpSet
 builder.Services.Configure<BlockchainSettings>(builder.Configuration.GetSection("BlockchainSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
+builder.Services.Configure<IpfsSettings>(builder.Configuration.GetSection("IpfsSettings"));
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -110,6 +111,7 @@ builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<IBlockchainService, BlockchainService>(); // ✅ Blockchain Service
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();  // ✅ NEW - Encryption Service
 builder.Services.AddScoped<IWalletService, WalletService>();  // ✅ NEW - Wallet Service
+builder.Services.AddHttpClient<IIpfsService, IpfsService>(); // ✅ NEW - IPFS Service
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<ISemesterService, SemesterService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();

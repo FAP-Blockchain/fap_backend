@@ -17,10 +17,14 @@ namespace Fap.Api.Controllers
     public class AttendanceController : ControllerBase
     {
         private readonly IAttendanceService _attendanceService;
+        private readonly ILogger<AttendanceController> _logger;
 
-        public AttendanceController(IAttendanceService attendanceService)
+        public AttendanceController(
+            IAttendanceService attendanceService,
+            ILogger<AttendanceController> logger)
         {
             _attendanceService = attendanceService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,6 +32,11 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Teacher,Admin")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+#pragma warning disable CS0618 // Type or member is obsolete
         public async Task<IActionResult> TakeAttendance([FromBody] TakeAttendanceRequest request)
         {
             try
@@ -38,10 +47,16 @@ namespace Fap.Api.Controllers
                 // Check authorization
                 if (!await _attendanceService.CanTakeAttendanceAsync(request.SlotId, teacherUserId))
                 {
+                    _logger.LogWarning("Teacher {TeacherId} not authorized to take attendance for slot {SlotId}", 
+                        teacherUserId, request.SlotId);
                     return Forbid();
                 }
 
                 var result = await _attendanceService.TakeAttendanceAsync(request);
+#pragma warning restore CS0618 // Type or member is obsolete
+                _logger.LogInformation("Attendance taken successfully for slot {SlotId} by teacher {TeacherId}", 
+                    request.SlotId, teacherUserId);
+                    
                 return Ok(new
                 {
                     success = true,
@@ -51,10 +66,12 @@ namespace Fap.Api.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                _logger.LogWarning(ex, "Invalid operation while taking attendance for slot {SlotId}", request.SlotId);
                 return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error taking attendance for slot {SlotId}", request.SlotId);
                 return StatusCode(500, new { success = false, message = "An error occurred while taking attendance", error = ex.Message });
             }
         }
@@ -63,6 +80,9 @@ namespace Fap.Api.Controllers
         /// GET /api/attendance/{id} - Get attendance details by ID
         /// </summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAttendanceById(Guid id)
         {
             try
@@ -70,12 +90,14 @@ namespace Fap.Api.Controllers
                 var result = await _attendanceService.GetAttendanceByIdAsync(id);
                 if (result == null)
                 {
+                    _logger.LogWarning("Attendance {AttendanceId} not found", id);
                     return NotFound(new { success = false, message = $"Attendance with ID {id} not found" });
                 }
                 return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting attendance {AttendanceId}", id);
                 return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
             }
         }
@@ -85,6 +107,9 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Teacher,Admin")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateAttendance(Guid id, [FromBody] UpdateAttendanceRequest request)
         {
             try
@@ -92,8 +117,11 @@ namespace Fap.Api.Controllers
                 var result = await _attendanceService.UpdateAttendanceAsync(id, request);
                 if (result == null)
                 {
+                    _logger.LogWarning("Attendance {AttendanceId} not found for update", id);
                     return NotFound(new { success = false, message = $"Attendance with ID {id} not found" });
                 }
+                
+                _logger.LogInformation("Attendance {AttendanceId} updated successfully", id);
                 return Ok(new
                 {
                     success = true,
@@ -103,6 +131,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating attendance {AttendanceId}", id);
                 return StatusCode(500, new { success = false, message = "An error occurred while updating attendance", error = ex.Message });
             }
         }

@@ -59,7 +59,9 @@ namespace Fap.Api.Services
 
         #region Attendance Actions
 
+#pragma warning disable CS0618 // Type or member is obsolete
         public async Task<IEnumerable<AttendanceDto>> TakeAttendanceAsync(TakeAttendanceRequest request)
+#pragma warning restore CS0618 // Type or member is obsolete
         {
             var slot = await _unitOfWork.Slots.GetByIdWithDetailsAsync(request.SlotId);
 

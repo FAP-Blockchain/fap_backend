@@ -1,0 +1,14 @@
+<Project>
+  <!-- 
+    Global MSBuild properties for the solution.
+    This file is automatically imported by all projects.
+  -->
+  <PropertyGroup>
+    <!-- 
+      Suppress CS8618 (Non-nullable property must contain a non-null value when exiting constructor)
+      Rationale: Most DTOs are auto-initialized by model binding and don't need explicit constructors
+      For production: Consider using 'required' keyword on critical properties instead
+    -->
+    <NoWarn>$(NoWarn);CS8618</NoWarn>
+  </PropertyGroup>
+</Project>

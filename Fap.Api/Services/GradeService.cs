@@ -222,7 +222,7 @@ namespace Fap.Api.Services
                             ComponentName = gc.Name,
                             ComponentWeight = gc.WeightPercent,
                             Score = grade?.Score,
-                            LetterGrade = grade?.LetterGrade
+                            LetterGrade = grade?.LetterGrade ?? string.Empty
                         };
                     }).ToList();
 
@@ -237,7 +237,7 @@ namespace Fap.Api.Services
                     // Calculate average
                     var gradesWithScores = componentGrades.Where(cg => cg.Score.HasValue).ToList();
                     decimal? averageScore = null;
-                    string? finalLetterGrade = null;
+                    string finalLetterGrade = string.Empty;
 
                     if (gradesWithScores.Any())
                     {
@@ -270,7 +270,7 @@ namespace Fap.Api.Services
                         StudentName = member.Student.User.FullName,
                         Grades = componentGrades,
                         AverageScore = averageScore,
-                        FinalLetterGrade = finalLetterGrade
+                        FinalLetterGrade = finalLetterGrade ?? string.Empty
                     });
                 }
 
@@ -358,7 +358,7 @@ SubjectCode = firstGrade.Subject.SubjectCode,
    SemesterName = "N/A", // ? DISABLED: firstGrade.Subject.Semester.Name
   ComponentGrades = componentGrades,
     AverageScore = averageScore,
-   FinalLetterGrade = finalLetterGrade
+   FinalLetterGrade = finalLetterGrade ?? string.Empty
       };
    })
   .ToList();
