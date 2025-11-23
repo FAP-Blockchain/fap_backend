@@ -155,7 +155,8 @@ builder.Services.AddCors(options =>
         "http://localhost:4200",
         "http://localhost:5173",
         "http://localhost:8080",
-        "https://uapblockchain.vercel.app"
+        "https://uapblockchain.vercel.app",
+        "http://localhost:8081"
    )
         .AllowAnyMethod()
     .AllowAnyHeader()
