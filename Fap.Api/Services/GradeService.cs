@@ -275,21 +275,26 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ? Auto-calculate letter grade based on new score
-                var letterGrade = GradeHelper.CalculateLetterGrade(request.Score);
-
+                // Update score (can be null to clear the score)
                 grade.Score = request.Score;
-                grade.LetterGrade = letterGrade;  // ? Always auto-calculated
+                
+                // Auto-calculate letter grade only if score is provided
+                grade.LetterGrade = request.Score.HasValue 
+                    ? GradeHelper.CalculateLetterGrade(request.Score.Value)
+                    : null;
+                    
                 grade.UpdatedAt = DateTime.UtcNow;
 
                 _uow.Grades.Update(grade);
                 await _uow.SaveChangesAsync();
 
                 response.Success = true;
-                response.Message = "Grade updated successfully";
+                response.Message = request.Score.HasValue 
+                    ? "Grade updated successfully"
+                    : "Grade cleared successfully";
                 response.GradeId = grade.Id;
 
-                _logger.LogInformation("Grade {GradeId} updated", id);
+                _logger.LogInformation("Grade {GradeId} updated. Score: {Score}", id, request.Score?.ToString() ?? "null");
 
                 return response;
             }
@@ -335,12 +340,14 @@ namespace Fap.Api.Services
 
                     var grade = gradeDict[gradeUpdate.GradeId];
 
-                    // Auto-calculate letter grade based on new score
-                    var letterGrade = GradeHelper.CalculateLetterGrade(gradeUpdate.Score);
-
-                    // Update grade properties
+                    // Update score (can be null to clear the score)
                     grade.Score = gradeUpdate.Score;
-                    grade.LetterGrade = letterGrade;
+                    
+                    // Auto-calculate letter grade only if score is provided
+                    grade.LetterGrade = gradeUpdate.Score.HasValue 
+                        ? GradeHelper.CalculateLetterGrade(gradeUpdate.Score.Value)
+                        : null;
+                        
                     grade.UpdatedAt = DateTime.UtcNow;
 
                     gradesToUpdate.Add(grade);

@@ -31,9 +31,9 @@ namespace Fap.Domain.DTOs.Grade
 
     public class UpdateGradeRequest
     {
-        [Required]
+        // Allow null to support removing/clearing scores
         [Range(0, 10, ErrorMessage = "Score must be between 0 and 10")]
-        public decimal Score { get; set; }
+        public decimal? Score { get; set; }
                
     }
 
@@ -43,9 +43,9 @@ namespace Fap.Domain.DTOs.Grade
         [Required]
         public Guid GradeId { get; set; }
 
-        [Required]
+        // Allow null to support removing/clearing scores
         [Range(0, 10, ErrorMessage = "Score must be between 0 and 10")]
-        public decimal Score { get; set; }
+        public decimal? Score { get; set; }
     }
 
     /// Request to update multiple grades at once
