@@ -28,6 +28,9 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Teacher,Admin")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateGrade([FromBody] CreateGradeRequest request)
         {
             try
@@ -45,7 +48,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error creating grade: {ex.Message}");
+                _logger.LogError(ex, "Error creating grade for student {StudentId}", request.StudentId);
                 return StatusCode(500, new { message = "An error occurred while creating grade" });
             }
         }
@@ -54,6 +57,9 @@ namespace Fap.Api.Controllers
         /// GET /api/grades/{id} - Get grade details
         /// </summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetGradeById(Guid id)
         {
             try
@@ -67,7 +73,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error getting grade {id}: {ex.Message}");
+                _logger.LogError(ex, "Error getting grade {GradeId}", id);
                 return StatusCode(500, new { message = "An error occurred while retrieving grade" });
             }
         }
@@ -77,6 +83,9 @@ namespace Fap.Api.Controllers
         /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Teacher,Admin")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateGrade(Guid id, [FromBody] UpdateGradeRequest request)
         {
             try
@@ -90,7 +99,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error updating grade {id}: {ex.Message}");
+                _logger.LogError(ex, "Error updating grade {GradeId}", id);
                 return StatusCode(500, new { message = "An error occurred while updating grade" });
             }
         }

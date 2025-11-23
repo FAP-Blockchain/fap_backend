@@ -29,8 +29,8 @@ namespace Fap.Domain.DTOs.Enrollment
         public bool? IsApproved { get; set; }
         public DateTime? RegisteredFrom { get; set; }
         public DateTime? RegisteredTo { get; set; }
-        public string? SortBy { get; set; } = "RegisteredAt";
-        public string? SortOrder { get; set; } = "desc";
+        public new string? SortBy { get; set; } = "RegisteredAt";
+        public new string? SortOrder { get; set; } = "desc";
     }
 
     /// Request to approve an enrollment
@@ -50,7 +50,7 @@ namespace Fap.Domain.DTOs.Enrollment
     {
         public Guid? SemesterId { get; set; }
         public bool? IsApproved { get; set; }
-        public string? SortBy { get; set; } = "RegisteredAt";
-        public string? SortOrder { get; set; } = "desc";
+        public new string? SortBy { get; set; } = "RegisteredAt";
+        public new string? SortOrder { get; set; } = "desc";
     }
 }

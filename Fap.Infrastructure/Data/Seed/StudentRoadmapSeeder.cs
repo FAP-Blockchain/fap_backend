@@ -86,10 +86,10 @@ namespace Fap.Infrastructure.Data.Seed
             await SaveAsync("Student Roadmaps");
 
             Console.WriteLine($"   ?? Created {roadmaps.Count} student roadmap entries:");
-            Console.WriteLine($"      • Completed: {roadmaps.Count(r => r.Status == "Completed")}");
-            Console.WriteLine($"  • In Progress: {roadmaps.Count(r => r.Status == "InProgress")}");
-            Console.WriteLine($"      • Planned: {roadmaps.Count(r => r.Status == "Planned")}");
-            Console.WriteLine($"      • Failed: {roadmaps.Count(r => r.Status == "Failed")}");
+            Console.WriteLine($"      ï¿½ Completed: {roadmaps.Count(r => r.Status == "Completed")}");
+            Console.WriteLine($"  ï¿½ In Progress: {roadmaps.Count(r => r.Status == "InProgress")}");
+            Console.WriteLine($"      ï¿½ Planned: {roadmaps.Count(r => r.Status == "Planned")}");
+            Console.WriteLine($"      ï¿½ Failed: {roadmaps.Count(r => r.Status == "Failed")}");
         }
 
         // ==================== TEST SCENARIO CREATORS ====================
@@ -234,10 +234,10 @@ namespace Fap.Infrastructure.Data.Seed
                 SequenceOrder = sequenceOrder,
                 Status = status,
                 FinalScore = score,
-                LetterGrade = score.HasValue ? ConvertToLetterGrade(score.Value) : "", // ? FIX: Empty string instead of null
+                LetterGrade = score.HasValue ? ConvertToLetterGrade(score.Value) : string.Empty, // ? FIX: Empty string instead of null
                 StartedAt = status != "Planned" ? DateTime.UtcNow.AddDays(-30) : null,
                 CompletedAt = status == "Completed" ? DateTime.UtcNow.AddDays(-7) : null,
-                Notes = GetRoadmapNotes(status, subjectName),
+                Notes = GetRoadmapNotes(status, subjectName) ?? string.Empty,
                 CreatedAt = DateTime.UtcNow.AddDays(-60),
                 UpdatedAt = DateTime.UtcNow.AddDays(-1)
             };

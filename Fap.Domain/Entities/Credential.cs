@@ -12,17 +12,17 @@ namespace Fap.Domain.Entities
     public class Credential
     {
         [Key] public Guid Id { get; set; }
-        [Required, MaxLength(120)] public string CredentialId { get; set; } // on-chain id / Certificate Number
-        [MaxLength(200)] public string IPFSHash { get; set; }
-        [MaxLength(500)] public string FileUrl { get; set; }
+        [Required, MaxLength(120)] public required string CredentialId { get; set; } // on-chain id / Certificate Number
+        [MaxLength(200)] public required string IPFSHash { get; set; }
+        [MaxLength(500)] public required string FileUrl { get; set; }
         [Required] public DateTime IssuedDate { get; set; }
         public bool IsRevoked { get; set; }
 
         [Required] public Guid StudentId { get; set; }
-        [ForeignKey(nameof(StudentId))] public Student Student { get; set; }
+        [ForeignKey(nameof(StudentId))] public Student? Student { get; set; }
 
         [Required] public Guid CertificateTemplateId { get; set; }
-        [ForeignKey(nameof(CertificateTemplateId))] public CertificateTemplate CertificateTemplate { get; set; }
+        [ForeignKey(nameof(CertificateTemplateId))] public CertificateTemplate? CertificateTemplate { get; set; }
 
         // ✅ BLOCKCHAIN INTEGRATION
         [MaxLength(200)]

@@ -144,13 +144,13 @@ namespace Fap.Infrastructure.Repositories
                 {
                     roadmap.CompletedAt = DateTime.UtcNow;
                     roadmap.FinalScore = finalScore;
-                    roadmap.LetterGrade = letterGrade;
+                    roadmap.LetterGrade = letterGrade ?? string.Empty;
                 }
 
                 if (status == "Failed")
                 {
                     roadmap.FinalScore = finalScore;
-                    roadmap.LetterGrade = letterGrade;
+                    roadmap.LetterGrade = letterGrade ?? string.Empty;
                 }
 
                 _context.StudentRoadmaps.Update(roadmap);

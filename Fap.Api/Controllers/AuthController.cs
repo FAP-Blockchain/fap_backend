@@ -25,40 +25,83 @@ namespace Fap.Api.Controllers
         // LOGIN
         [HttpPost("login")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            var result = await _authService.LoginAsync(req);
-            if (result == null)
-                return Unauthorized(new { message = "Invalid email or password" });
-            return Ok(result);
+            try
+            {
+                var result = await _authService.LoginAsync(req);
+                if (result == null)
+                {
+                    _logger.LogWarning("Failed login attempt for email: {Email}", req.Email);
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+                
+                _logger.LogInformation("User {Email} logged in successfully", req.Email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login for email: {Email}", req.Email);
+                return StatusCode(500, new { message = "An error occurred during login" });
+            }
         }
 
         // REFRESH TOKEN
         [HttpPost("refresh-token")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
 
-            if (result == null)
-                return Unauthorized(new { message = "Invalid or expired refresh token" });
+                if (result == null)
+                {
+                    _logger.LogWarning("Invalid or expired refresh token attempt");
+                    return Unauthorized(new { message = "Invalid or expired refresh token" });
+                }
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing token");
+                return StatusCode(500, new { message = "An error occurred while refreshing token" });
+            }
         }
 
         // LOGOUT
         [HttpPost("logout")]
         [Authorize]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Logout()
         {
-            var userId = Guid.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
-            await _authService.LogoutAsync(userId);
-            return Ok(new { message = "Logged out successfully" });
+            try
+            {
+                var userId = Guid.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
+                await _authService.LogoutAsync(userId);
+                
+                _logger.LogInformation("User {UserId} logged out successfully", userId);
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                return StatusCode(500, new { message = "An error occurred during logout" });
+            }
         }
 
         // SEND OTP
         [HttpPost("send-otp")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         {
             try
@@ -69,10 +112,12 @@ namespace Fap.Api.Controllers
                 var otp = await _otpService.GenerateOtpAsync(request.Email, purpose);
                 await _emailService.SendOtpEmailAsync(request.Email, otp, purpose);
 
+                _logger.LogInformation("OTP sent successfully to {Email} for purpose: {Purpose}", request.Email, purpose);
                 return Ok(new { message = "OTP sent successfully to your email" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to send OTP to {Email}", request.Email);
                 return BadRequest(new { message = $"Failed to send OTP: {ex.Message}" });
             }
         }
