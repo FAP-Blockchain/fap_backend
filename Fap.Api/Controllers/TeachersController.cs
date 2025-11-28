@@ -3,6 +3,7 @@ using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Teacher;
 using Fap.Domain.DTOs.Slot;
 using Fap.Domain.DTOs.Schedule;
+using Fap.Domain.DTOs.Class;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,19 +19,22 @@ namespace Fap.Api.Controllers
         private readonly ISlotService _slotService;
         private readonly IScheduleService _scheduleService;
         private readonly IAttendanceService _attendanceService;
+    private readonly IClassService _classService;
         private readonly ILogger<TeachersController> _logger;
 
         public TeachersController(
-         ITeacherService teacherService,
-         ISlotService slotService,
-         IScheduleService scheduleService,
-         IAttendanceService attendanceService,
-         ILogger<TeachersController> logger)
+            ITeacherService teacherService,
+            ISlotService slotService,
+            IScheduleService scheduleService,
+            IAttendanceService attendanceService,
+            IClassService classService,
+            ILogger<TeachersController> logger)
         {
             _teacherService = teacherService;
             _slotService = slotService;
             _scheduleService = scheduleService;
             _attendanceService = attendanceService;
+            _classService = classService;
             _logger = logger;
         }
 
@@ -191,6 +195,50 @@ namespace Fap.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error getting schedule statistics: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "An error occurred" });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/teachers/me/classes - Get all classes assigned to the current teacher
+        /// </summary>
+        [HttpGet("me/classes")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> GetMyClasses([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var teacherId = await GetCurrentTeacherIdAsync();
+
+                var request = new GetClassesRequest
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    TeacherId = teacherId.ToString()
+                };
+
+                var result = await _classService.GetClassesAsync(request);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = result.Items,
+                    pagination = new
+                    {
+                        result.Page,
+                        result.PageSize,
+                        TotalItems = result.TotalCount,
+                        result.TotalPages
+                    }
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting classes for current teacher: {ex.Message}");
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
