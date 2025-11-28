@@ -60,6 +60,28 @@ namespace Fap.Infrastructure.Repositories
                 .AnyAsync(cm => cm.ClassId == classId && cm.StudentId == studentId);
         }
 
+        public async Task<bool> HasStudentSlotConflictAsync(Guid studentId, DateTime date, Guid? timeSlotId)
+        {
+            var enrolledClassIds = await _context.ClassMembers
+                .AsNoTracking()
+                .Where(cm => cm.StudentId == studentId)
+                .Select(cm => cm.ClassId)
+                .ToListAsync();
+
+            if (!enrolledClassIds.Any())
+            {
+                return false;
+            }
+
+            return await _context.Slots
+                .AsNoTracking()
+                .AnyAsync(slot =>
+                    enrolledClassIds.Contains(slot.ClassId) &&
+                    slot.Date.Date == date.Date &&
+                    slot.TimeSlotId == timeSlotId &&
+                    slot.Status != "Cancelled");
+        }
+
         public async Task<int> GetClassMemberCountAsync(Guid classId)
         {
             return await _context.ClassMembers

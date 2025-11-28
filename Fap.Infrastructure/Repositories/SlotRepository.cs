@@ -168,5 +168,26 @@ namespace Fap.Infrastructure.Repositories
 
             return await query.AnyAsync();
         }
+
+        public async Task<bool> HasTeacherConflictAsync(
+            Guid teacherId,
+            DateTime date,
+            Guid? timeSlotId,
+            Guid? excludeSlotId = null)
+        {
+            var query = _dbSet
+                .Where(s =>
+                    s.Date.Date == date.Date &&
+                    s.TimeSlotId == timeSlotId &&
+                    s.Status != "Cancelled" &&
+                    (s.Class.TeacherUserId == teacherId || s.SubstituteTeacherId == teacherId));
+
+            if (excludeSlotId.HasValue)
+            {
+                query = query.Where(s => s.Id != excludeSlotId.Value);
+            }
+
+            return await query.AnyAsync();
+        }
     }
 }

@@ -106,6 +106,9 @@ namespace Fap.Api.Services
                 throw new InvalidOperationException("A slot already exists for this class at the same date and time");
             }
 
+            var teacherForSlot = request.SubstituteTeacherId ?? classEntity.TeacherUserId;
+            await EnsureTeacherAvailabilityAsync(teacherForSlot, request.Date, request.TimeSlotId);
+
             var slot = new Slot
             {
                 Id = Guid.NewGuid(),
@@ -174,6 +177,9 @@ namespace Fap.Api.Services
                     throw new InvalidOperationException("A slot already exists for this class at the same date and time");
                 }
             }
+
+            var teacherForSlot = request.SubstituteTeacherId ?? slot.Class.TeacherUserId;
+            await EnsureTeacherAvailabilityAsync(teacherForSlot, request.Date, request.TimeSlotId, id);
 
             slot.Date = request.Date;
             slot.TimeSlotId = request.TimeSlotId;
@@ -397,6 +403,18 @@ namespace Fap.Api.Services
 
             // Cannot delete if has attendance
             return slot.Attendances == null || !slot.Attendances.Any();
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private async Task EnsureTeacherAvailabilityAsync(Guid teacherId, DateTime date, Guid? timeSlotId, Guid? excludeSlotId = null)
+        {
+            if (await _unitOfWork.Slots.HasTeacherConflictAsync(teacherId, date, timeSlotId, excludeSlotId))
+            {
+                throw new InvalidOperationException("Teacher already has another slot scheduled at the same time");
+            }
         }
 
         #endregion

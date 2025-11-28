@@ -12,5 +12,6 @@ namespace Fap.Domain.Repositories
         Task<IEnumerable<Slot>> GetByStatusAsync(string status);
         Task<IEnumerable<Slot>> GetUpcomingSlotsAsync(Guid teacherId);
         Task<bool> HasOverlappingSlotAsync(Guid classId, DateTime date, Guid? timeSlotId, Guid? excludeSlotId = null);
+        Task<bool> HasTeacherConflictAsync(Guid teacherId, DateTime date, Guid? timeSlotId, Guid? excludeSlotId = null);
     }
 }

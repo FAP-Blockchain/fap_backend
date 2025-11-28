@@ -25,6 +25,11 @@ namespace Fap.Domain.Repositories
         /// </summary>
         Task<bool> IsStudentInClassAsync(Guid classId, Guid studentId);
 
+    /// <summary>
+    /// Check if student already has a slot (in any enrolled class) at the given date/time
+    /// </summary>
+    Task<bool> HasStudentSlotConflictAsync(Guid studentId, DateTime date, Guid? timeSlotId);
+
         /// <summary>
         /// Get class member count for a specific class
         /// </summary>

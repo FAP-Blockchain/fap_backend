@@ -454,6 +454,30 @@ namespace Fap.Api.Services
                         continue;
                     }
 
+                    // ✅ Check for schedule conflicts with existing slots
+                    var classSlots = @class.Slots ?? new List<Slot>();
+                    var slotConflicts = new List<string>();
+
+                    foreach (var slot in classSlots)
+                    {
+                        var hasConflict = await _uow.ClassMembers.HasStudentSlotConflictAsync(
+                            studentId,
+                            slot.Date,
+                            slot.TimeSlotId);
+
+                        if (hasConflict)
+                        {
+                            slotConflicts.Add($"{slot.Date:yyyy-MM-dd} - {slot.TimeSlot?.Name ?? "TimeSlot"}");
+                        }
+                    }
+
+                    if (slotConflicts.Any())
+                    {
+                        response.Errors.Add($"Student '{student.StudentCode}' has schedule conflicts on: {string.Join(", ", slotConflicts)}");
+                        failedCount++;
+                        continue;
+                    }
+
                     // ✅ Add student to class via ClassMembers
                     var classMember = new Domain.Entities.ClassMember
                     {
