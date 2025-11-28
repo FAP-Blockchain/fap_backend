@@ -17,6 +17,9 @@ namespace Fap.Domain.DTOs.Class
         [Required]
         public Guid TeacherId { get; set; }
 
+    [Range(1, 500)]
+    public int MaxEnrollment { get; set; } = 40;
+
         /// <summary>
         /// Optional initial slots that should be generated immediately after the class is created.
         /// </summary>
@@ -34,6 +37,14 @@ namespace Fap.Domain.DTOs.Class
 
         [Required]
         public Guid TeacherId { get; set; }
+
+        [Range(1, 500)]
+        public int MaxEnrollment { get; set; } = 40;
+
+        /// <summary>
+        /// Optional slots to append to the class schedule after the class details are updated.
+        /// </summary>
+        public List<CreateClassSlotRequest> AdditionalSlots { get; set; } = new();
     }
 
     public class ClassResponse

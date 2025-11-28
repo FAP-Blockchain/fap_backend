@@ -124,7 +124,8 @@ namespace Fap.Api.Services
                     Id = Guid.NewGuid(),
                     ClassCode = request.ClassCode,
                     SubjectOfferingId = request.SubjectOfferingId,
-                    TeacherUserId = request.TeacherId
+                    TeacherUserId = request.TeacherId,
+                    MaxEnrollment = request.MaxEnrollment
                 };
 
                 await _uow.Classes.AddAsync(newClass);
@@ -234,13 +235,51 @@ namespace Fap.Api.Services
                 existingClass.ClassCode = request.ClassCode;
                 existingClass.SubjectOfferingId = request.SubjectOfferingId;
                 existingClass.TeacherUserId = request.TeacherId;
+                existingClass.MaxEnrollment = request.MaxEnrollment;
+                existingClass.UpdatedAt = DateTime.UtcNow;
 
                 _uow.Classes.Update(existingClass);
                 await _uow.SaveChangesAsync();
 
+                if (request.AdditionalSlots?.Any() == true)
+                {
+                    foreach (var slotDefinition in request.AdditionalSlots.OrderBy(s => s.Date))
+                    {
+                        try
+                        {
+                            var slotDto = await _slotService.CreateSlotAsync(new CreateSlotRequest
+                            {
+                                ClassId = existingClass.Id,
+                                Date = slotDefinition.Date,
+                                TimeSlotId = slotDefinition.TimeSlotId,
+                                SubstituteTeacherId = slotDefinition.SubstituteTeacherId,
+                                SubstitutionReason = slotDefinition.SubstitutionReason,
+                                Notes = slotDefinition.Notes
+                            });
+
+                            if (slotDto != null)
+                            {
+                                response.CreatedSlotIds.Add(slotDto.Id);
+                            }
+                        }
+                        catch (Exception slotEx)
+                        {
+                            var slotError = $"Could not create slot on {slotDefinition.Date:yyyy-MM-dd}: {slotEx.Message}";
+                            _logger.LogWarning(slotEx, slotError);
+                            response.SlotErrors.Add(slotError);
+                        }
+                    }
+                }
+
                 response.Success = true;
-                response.Message = "Class updated successfully";
-                _logger.LogInformation($"✅ Class {id} updated successfully");
+                response.Message = response.SlotErrors.Any()
+                    ? "Class updated but some slots could not be generated"
+                    : "Class updated successfully";
+                _logger.LogInformation(
+                    "Class {ClassId} updated with {SlotCount} new slots (slot errors: {SlotErrorCount})",
+                    id,
+                    response.CreatedSlotIds.Count,
+                    response.SlotErrors.Count);
 
                 return response;
             }
