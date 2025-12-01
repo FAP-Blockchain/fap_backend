@@ -41,6 +41,7 @@ namespace Fap.Domain.Helpers
             var snapshot = new CurriculumProgressSnapshot(student, orderedCurriculumSubjects);
 
             var gradeSummary = BuildGradeSummary(student);
+            var attendanceSummary = BuildAttendanceSummary(student);
 
             var completedSubjectIds = gradeSummary
                 .Where(kvp => kvp.Value.WeightPercent >= 100 && kvp.Value.FinalScore.HasValue && kvp.Value.FinalScore.Value >= 5m)
@@ -70,6 +71,10 @@ namespace Fap.Domain.Helpers
                 var prerequisitesMet = cs.PrerequisiteSubjectId == null || completedSubjectIds.Contains(cs.PrerequisiteSubjectId.Value);
                 var hasApprovedEnrollment = latestEnrollment != null;
 
+                attendanceSummary.TryGetValue(cs.SubjectId, out var attendanceInfo);
+                var attendancePercentage = attendanceInfo.HasRecords ? attendanceInfo.Percentage : null;
+                var attendanceRequirementMet = attendanceInfo.HasRecords && attendanceInfo.RequirementMet;
+
                 var status = ResolveSubjectStatus(
                     cs.SubjectId,
                     completedSubjectIds,
@@ -77,6 +82,7 @@ namespace Fap.Domain.Helpers
                     isCurrentEnrollment,
                     hasApprovedEnrollment,
                     prerequisitesMet,
+                    attendanceRequirementMet,
                     finalScore,
                     totalWeight);
 
@@ -118,7 +124,9 @@ namespace Fap.Domain.Helpers
                     CurrentSemesterId = assignedSemesterId,
                     CurrentSemesterName = assignedSemesterName,
                     IsCurrentEnrollment = isCurrentEnrollment,
-                    Credits = cs.Subject.Credits
+                    Credits = cs.Subject.Credits,
+                    AttendancePercentage = attendancePercentage,
+                    AttendanceRequirementMet = attendanceRequirementMet
                 };
 
                 snapshot.Subjects[cs.SubjectId] = subjectProgress;
@@ -145,23 +153,66 @@ namespace Fap.Domain.Helpers
                 decimal weightedTotal = 0m;
                 int totalWeight = 0;
 
-            foreach (var grade in group)
-            {
-                var weight = grade.GradeComponent?.WeightPercent ?? 0;
-                if (weight <= 0 || !grade.Score.HasValue)
+                foreach (var grade in group)
                 {
-                    continue;
+                    var weight = grade.GradeComponent?.WeightPercent ?? 0;
+                    var componentName = grade.GradeComponent?.Name ?? string.Empty;
+
+                    // Skip Attendance component in final score calculation
+                    if (componentName.Contains("Attendance", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (weight <= 0 || !grade.Score.HasValue)
+                    {
+                        continue;
+                    }
+
+                    weightedTotal += grade.Score.Value * weight;
+                    totalWeight += weight;
                 }
 
-                weightedTotal += grade.Score.Value * weight;
-                totalWeight += weight;
-            }                decimal? finalScore = null;
+                decimal? finalScore = null;
                 if (totalWeight > 0)
                 {
-                    finalScore = Math.Round(weightedTotal / 100m, 2);
+                    finalScore = Math.Round(weightedTotal / totalWeight, 2);
                 }
 
                 result[group.Key] = new GradeAggregate(finalScore, totalWeight);
+            }
+
+            return result;
+        }
+
+        private static Dictionary<Guid, AttendanceAggregate> BuildAttendanceSummary(Student student)
+        {
+            var result = new Dictionary<Guid, AttendanceAggregate>();
+
+            if (student.Attendances == null || !student.Attendances.Any())
+            {
+                return result;
+            }
+
+            var groups = student.Attendances
+                .Where(a => a.SubjectId != Guid.Empty)
+                .GroupBy(a => a.SubjectId);
+
+            foreach (var group in groups)
+            {
+                var totalSessions = group.Count();
+
+                if (totalSessions == 0)
+                {
+                    result[group.Key] = new AttendanceAggregate(false, null, false);
+                    continue;
+                }
+
+                var attendedSessions = group.Count(a => a.IsPresent || a.IsExcused);
+                var percentage = Math.Round((decimal)attendedSessions / totalSessions * 100, 2);
+                var requirementMet = percentage >= 80m;
+
+                result[group.Key] = new AttendanceAggregate(true, percentage, requirementMet);
             }
 
             return result;
@@ -233,12 +284,13 @@ namespace Fap.Domain.Helpers
             bool isCurrentEnrollment,
             bool hasApprovedEnrollment,
             bool prerequisitesMet,
+            bool attendanceRequirementMet,
             decimal? finalScore,
             int totalWeight)
         {
             if (completedSubjectIds.Contains(subjectId))
             {
-                return "Completed";
+                return attendanceRequirementMet ? "Completed" : "InProgress";
             }
 
             if (failedSubjectIds.Contains(subjectId))
@@ -265,6 +317,7 @@ namespace Fap.Domain.Helpers
         }
 
         private readonly record struct GradeAggregate(decimal? FinalScore, int WeightPercent);
+        private readonly record struct AttendanceAggregate(bool HasRecords, decimal? Percentage, bool RequirementMet);
     }
 
     public class CurriculumProgressSnapshot
@@ -332,5 +385,7 @@ namespace Fap.Domain.Helpers
         public string? CurrentSemesterName { get; set; }
         public bool IsCurrentEnrollment { get; set; }
         public int Credits { get; set; }
+        public decimal? AttendancePercentage { get; set; }
+        public bool AttendanceRequirementMet { get; set; }
     }
 }

@@ -396,6 +396,7 @@ return (true, reasons);
           .ThenInclude(e => e.Class)
             .ThenInclude(c => c.SubjectOffering)
               .ThenInclude(so => so.Semester)
+                .Include(s => s.Attendances)
         .FirstOrDefaultAsync(s => s.Id == id);
     }
     }

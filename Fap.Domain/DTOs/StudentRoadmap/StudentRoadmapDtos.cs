@@ -224,6 +224,7 @@ namespace Fap.Domain.DTOs.StudentRoadmap
         public int InProgressSubjects { get; set; }
         public int OpenSubjects { get; set; }
         public int LockedSubjects { get; set; }
+        public decimal? CurrentGPA { get; set; }
         public List<CurriculumSemesterDto> Semesters { get; set; } = new();
     }
 
@@ -247,6 +248,8 @@ namespace Fap.Domain.DTOs.StudentRoadmap
         public string? CurrentSemesterName { get; set; }
         public string? PrerequisiteSubjectCode { get; set; }
         public bool PrerequisitesMet { get; set; }
+        public decimal? AttendancePercentage { get; set; }
+        public bool AttendanceRequirementMet { get; set; }
         public string? Notes { get; set; }
     }
 

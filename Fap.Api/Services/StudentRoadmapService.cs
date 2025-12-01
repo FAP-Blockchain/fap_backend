@@ -355,6 +355,9 @@ namespace Fap.Api.Services
                     LockedSubjects = snapshot.LockedSubjects
                 };
 
+                var calculatedGpa = CalculateCurriculumGpa(snapshot.Subjects.Values);
+                result.CurrentGPA = calculatedGpa ?? (student.GPA > 0 ? student.GPA : (decimal?)null);
+
                 if (!snapshot.CurriculumSubjects.Any())
                 {
                     return result;
@@ -1007,6 +1010,33 @@ namespace Fap.Api.Services
             return (true, reasons);
         }
 
+        private static decimal? CalculateCurriculumGpa(IEnumerable<SubjectProgressInfo> subjects)
+        {
+            decimal totalGradePoints = 0m;
+            int totalCreditsWithGrades = 0;
+
+            foreach (var subject in subjects)
+            {
+                if (!subject.FinalScore.HasValue || subject.Credits <= 0)
+                {
+                    continue;
+                }
+
+                var letterGrade = GradeHelper.CalculateLetterGrade(subject.FinalScore.Value);
+                var gradePoint = GradeHelper.GetGradePoint(letterGrade);
+
+                totalGradePoints += gradePoint * subject.Credits;
+                totalCreditsWithGrades += subject.Credits;
+            }
+
+            if (totalCreditsWithGrades == 0)
+            {
+                return null;
+            }
+
+            return Math.Round(totalGradePoints / totalCreditsWithGrades, 2);
+        }
+
         private static CurriculumSubjectStatusDto MapToSubjectStatus(SubjectProgressInfo progress)
         {
             var curriculumSubject = progress.CurriculumSubject;
@@ -1024,6 +1054,8 @@ namespace Fap.Api.Services
                 CurrentSemesterName = progress.CurrentSemesterName,
                 PrerequisiteSubjectCode = progress.PrerequisiteSubjectCode,
                 PrerequisitesMet = progress.PrerequisitesMet,
+                AttendancePercentage = progress.AttendancePercentage,
+                AttendanceRequirementMet = progress.AttendanceRequirementMet,
                 Notes = progress.Status switch
                 {
                     "Locked" when !string.IsNullOrEmpty(progress.PrerequisiteSubjectCode) =>

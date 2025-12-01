@@ -464,6 +464,10 @@ namespace Fap.Api.Services
 
                         foreach (var cg in gradesWithScores)
                         {
+                            // Skip Attendance component in final score calculation
+                            if (cg.ComponentName.Contains("Attendance", StringComparison.OrdinalIgnoreCase))
+                                continue;
+
                             if (cg.Score.HasValue)
                             {
                                 totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
@@ -550,6 +554,10 @@ namespace Fap.Api.Services
 
                         foreach (var componentGrade in componentGrades)
                         {
+                            // Skip Attendance component in final score calculation
+                            if (componentGrade.ComponentName.Contains("Attendance", StringComparison.OrdinalIgnoreCase))
+                                continue;
+
                             if (componentGrade.Score.HasValue)
                             {
                                 totalWeightedScore += componentGrade.Score.Value * componentGrade.ComponentWeight;
