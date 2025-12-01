@@ -73,9 +73,4 @@ namespace Fap.Domain.DTOs.Student
         public DateTime JoinedAt { get; set; }
     }
 
-    public class StudentProfileImageDto
-    {
-        public string ImageUrl { get; set; } = string.Empty;
-        public string? PublicId { get; set; }
-    }
 }

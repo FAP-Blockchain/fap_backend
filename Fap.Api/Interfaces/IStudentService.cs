@@ -1,4 +1,3 @@
-using System.IO;
 using Fap.Domain.DTOs.Common;
 using Fap.Domain.DTOs.Student;
 
@@ -15,11 +14,6 @@ namespace Fap.Api.Interfaces
         /// </summary>
   Task<StudentDetailDto?> GetCurrentStudentProfileAsync(Guid userId);
 
-     /// <summary>
-     /// Update the current student's profile image and return the new URL
-     /// </summary>
-     Task<StudentProfileImageDto> UpdateProfileImageAsync(Guid userId, Stream imageStream, string fileName);
-        
         /// <summary>
         /// Get students eligible for a specific subject/class
         /// For admin to select students when assigning to a class

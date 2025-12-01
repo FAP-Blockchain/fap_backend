@@ -65,7 +65,8 @@ namespace Fap.Api.Services
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token,
                 Role = user.Role.Name,
-                FullName = user.FullName
+                FullName = user.FullName,
+                ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -97,7 +98,8 @@ namespace Fap.Api.Services
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken.Token,
                 Role = user.Role.Name,
-                FullName = user.FullName
+                FullName = user.FullName,
+                ProfileImageUrl = user.ProfileImageUrl
             };
         }
 

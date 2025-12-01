@@ -90,6 +90,10 @@ namespace Fap.Api.Mappings
                 
                 // Contact info
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+
+                // Profile image info
+                .ForMember(dest => dest.ProfileImageUrl, opt => opt.MapFrom(src => src.ProfileImageUrl))
+                .ForMember(dest => dest.ProfileImagePublicId, opt => opt.MapFrom(src => src.ProfileImagePublicId))
                 
                 // Student/Teacher Info
                 .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student != null ? src.Student.StudentCode : null))

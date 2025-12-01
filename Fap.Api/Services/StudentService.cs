@@ -6,7 +6,6 @@ using Fap.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,18 +16,15 @@ namespace Fap.Api.Services
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentService> _logger;
-        private readonly ICloudStorageService _cloudStorageService;
 
         public StudentService(
             IUnitOfWork uow,
             IMapper mapper,
-            ILogger<StudentService> logger,
-            ICloudStorageService cloudStorageService)
+            ILogger<StudentService> logger)
         {
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
-            _cloudStorageService = cloudStorageService;
         }
 
         // ========== GET STUDENTS WITH PAGINATION ==========
@@ -183,57 +179,6 @@ namespace Fap.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current student profile for user {UserId}", userId);
-                throw;
-            }
-        }
-
-        public async Task<StudentProfileImageDto> UpdateProfileImageAsync(Guid userId, Stream imageStream, string fileName)
-        {
-            try
-            {
-                if (imageStream == null || imageStream.Length == 0)
-                {
-                    throw new ArgumentException("Image stream is empty", nameof(imageStream));
-                }
-
-                var student = await _uow.Students.GetByUserIdAsync(userId);
-                if (student == null)
-                {
-                    throw new InvalidOperationException("Student profile not found for current user");
-                }
-
-                var user = student.User ?? await _uow.Users.GetByIdAsync(student.UserId)
-                    ?? throw new InvalidOperationException("User record not found");
-
-                var uploadFileName = string.IsNullOrWhiteSpace(fileName)
-                    ? $"{student.StudentCode}_profile"
-                    : fileName;
-
-                var uploadResult = await _cloudStorageService.UploadProfileImageAsync(imageStream, uploadFileName);
-
-                // Delete previous image if exists and differs
-                if (!string.IsNullOrWhiteSpace(user.ProfileImagePublicId) &&
-                    !string.Equals(user.ProfileImagePublicId, uploadResult.PublicId, StringComparison.OrdinalIgnoreCase))
-                {
-                    await _cloudStorageService.DeleteImageAsync(user.ProfileImagePublicId!);
-                }
-
-                user.ProfileImageUrl = uploadResult.Url;
-                user.ProfileImagePublicId = uploadResult.PublicId;
-                user.UpdatedAt = DateTime.UtcNow;
-
-                _uow.Users.Update(user);
-                await _uow.SaveChangesAsync();
-
-                return new StudentProfileImageDto
-                {
-                    ImageUrl = uploadResult.Url,
-                    PublicId = uploadResult.PublicId
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating profile image for user {UserId}", userId);
                 throw;
             }
         }

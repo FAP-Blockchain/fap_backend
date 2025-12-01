@@ -6,5 +6,6 @@ namespace Fap.Domain.DTOs.Auth
         public string RefreshToken { get; set; }
         public string Role { get; set; }
         public string FullName { get; set; }
+        public string? ProfileImageUrl { get; set; }
     }
 }

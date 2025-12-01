@@ -11,6 +11,10 @@ namespace Fap.Domain.DTOs.User
         
         // ? NEW: Contact Info
         public string? PhoneNumber { get; set; }
+
+    // Profile image (stored at User level)
+    public string? ProfileImageUrl { get; set; }
+    public string? ProfileImagePublicId { get; set; }
         
         // Optional: Student/Teacher info
         public string? StudentCode { get; set; }
