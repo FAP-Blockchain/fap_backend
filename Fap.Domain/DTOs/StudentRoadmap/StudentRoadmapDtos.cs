@@ -186,8 +186,8 @@ namespace Fap.Domain.DTOs.StudentRoadmap
         public List<string> Prerequisites { get; set; } = new();
         public bool AllPrerequisitesMet { get; set; }
         
-        // ✅ NEW: Class availability info
-        public bool HasAvailableClasses { get; set; }
+    // Class availability info
+    public bool HasAvailableClasses { get; set; }
         public int AvailableClassCount { get; set; }
         public List<AvailableClassInfoDto> AvailableClasses { get; set; } = new();
     }

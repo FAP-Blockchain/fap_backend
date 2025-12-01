@@ -71,7 +71,7 @@ namespace Fap.Api.Services
                 var semesterId = subjectOffering.SemesterId;
                 var subjectId = subject.Id;
 
-                // 4. ✅ NEW: Check if student is already a member of the class (in ClassMembers table)
+                // 4. Check if student is already a member of the class (ClassMembers table)
                 var isAlreadyMember = await _uow.ClassMembers.IsStudentInClassAsync(
               request.ClassId,
                  request.StudentId);
@@ -98,7 +98,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 6. ✅ Ensure student is not already enrolled in another class for this subject this semester
+                // 6. Ensure student is not already enrolled in another class for this subject this semester
                 var alreadyInSubjectThisSemester = await _uow.Enrolls.IsStudentEnrolledInSubjectAsync(
                     request.StudentId,
                     subjectId,
@@ -111,7 +111,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 7. ✅ Curriculum-based eligibility (subject in curriculum, prerequisites, completion)
+                // 7. Curriculum-based eligibility (subject in curriculum, prerequisites, completion)
                 var prerequisiteValidation = await ValidateCurriculumEligibilityAsync(request.StudentId, subjectId, subject.SubjectCode);
                 if (!prerequisiteValidation.IsValid)
                 {
@@ -128,7 +128,7 @@ namespace Fap.Api.Services
                     request.StudentId,
                     subjectId);
 
-                // 8. ✅✅ NEW: Check sequence order (warning only, not blocking)
+                // 8. Check sequence order (warning only, not blocking)
                 if (roadmapEntry != null)
                 {
                     var sequenceWarning = await CheckSequenceOrderAsync(request.StudentId, roadmapEntry);
@@ -243,7 +243,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ Check if student is already in class roster (ClassMember)
+                // Check if student is already in class roster (ClassMember)
                 var isAlreadyInRoster = await _uow.ClassMembers.IsStudentInClassAsync(
     enrollment.ClassId, enrollment.StudentId);
 
@@ -254,7 +254,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ Check class capacity
+                // Check class capacity
                 var classEntity = await _uow.Classes.GetByIdAsync(enrollment.ClassId);
                 if (classEntity == null)
                 {
@@ -273,11 +273,11 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ Approve enrollment
+                // Approve enrollment
                 enrollment.IsApproved = true;
                 _uow.Enrolls.Update(enrollment);
 
-                // ✅✅ CREATE ClassMember - Add student to class roster
+                // Create class member entry for the roster
                 var classMember = new ClassMember
                 {
                     Id = Guid.NewGuid(),
@@ -288,7 +288,7 @@ namespace Fap.Api.Services
 
                 await _uow.ClassMembers.AddAsync(classMember);
 
-                // ✅✅✅ NEW: Auto-create grade records with null scores for all grade components of the subject
+                // Auto-create grade records with null scores for all grade components of the subject
                 var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(classEntity.SubjectOfferingId);
                 if (subjectOffering != null)
                 {
@@ -312,7 +312,7 @@ namespace Fap.Api.Services
                                 StudentId = enrollment.StudentId,
                                 SubjectId = subjectOffering.SubjectId,
                                 GradeComponentId = component.Id,
-                                Score = null,  // ✅ Initialize with null
+                                Score = null,
                                 LetterGrade = null,
                                 UpdatedAt = DateTime.UtcNow
                             };
@@ -326,7 +326,7 @@ namespace Fap.Api.Services
                         "Auto-created {Count} grade records (null scores) for student {StudentId} in subject {SubjectId}",
                         gradesCreated, enrollment.StudentId, subjectOffering.SubjectId);
 
-                    // ✅ Update roadmap with actual semester and set status to InProgress
+                    // Update roadmap with actual semester and set status to InProgress
                     await _roadmapService.UpdateRoadmapWithActualSemesterAsync(
                         enrollment.StudentId,
                         subjectOffering.SubjectId,
@@ -476,7 +476,7 @@ namespace Fap.Api.Services
             }
         }
 
-        // ==================== NEW HELPER METHODS ====================
+    // ==================== Helper methods ====================
 
         /// <summary>
         /// Validate curriculum-based eligibility (subject in curriculum, prerequisites met, not already completed)
@@ -536,7 +536,7 @@ namespace Fap.Api.Services
             if (skippedSubjects.Any())
             {
                 var skippedCodes = string.Join(", ", skippedSubjects.Select(s => s.Subject.SubjectCode));
-                return $"⚠️ Note: You are skipping earlier subjects in your roadmap: {skippedCodes}. " +
+                return $"Note: You are skipping earlier subjects in your roadmap: {skippedCodes}. " +
                  "Consider enrolling in recommended sequence order.";
             }
 

@@ -1,142 +1,87 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fap.Infrastructure.Data.Seed
 {
     /// <summary>
-    /// Seeds Classes using SubjectOffering pattern
-    /// ? Classes now link to SubjectOffering (not directly to Subject)
+    /// Seeds Classes using SubjectOffering pattern with fixed, conflict-free schedules.
     /// </summary>
     public class ClassSeeder : BaseSeeder
     {
-    // Class IDs
-  public static readonly Guid SE101_01_Spring = Guid.Parse("40000000-0000-0000-0000-000000000001");
-     public static readonly Guid SE101_02_Spring = Guid.Parse("40000000-0000-0000-0000-000000000002");
-     public static readonly Guid SE101_01_Fall = Guid.Parse("40000000-0000-0000-0000-000000000003");
-        public static readonly Guid DB201_01_Spring = Guid.Parse("40000000-0000-0000-0000-000000000004");
-        public static readonly Guid DB201_02_Spring = Guid.Parse("40000000-0000-0000-0000-000000000005");
-        public static readonly Guid WEB301_01_Summer = Guid.Parse("40000000-0000-0000-0000-000000000006");
-        public static readonly Guid MATH101_01_Spring = Guid.Parse("40000000-0000-0000-0000-000000000007");
-        public static readonly Guid CS101_01_Spring = Guid.Parse("40000000-0000-0000-0000-000000000008");
+        public static readonly Guid SE101_Winter2025_A = Guid.Parse("40000000-0000-0000-0000-000000000101");
+        public static readonly Guid SE101_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-000000000102");
+        public static readonly Guid SE101_Fall2026_A = Guid.Parse("40000000-0000-0000-0000-000000000103");
+        public static readonly Guid SE102_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-000000000104");
+        public static readonly Guid SE102_Fall2026_A = Guid.Parse("40000000-0000-0000-0000-000000000105");
+        public static readonly Guid DB201_Winter2025_Evening = Guid.Parse("40000000-0000-0000-0000-000000000106");
+        public static readonly Guid DB201_Summer2026_A = Guid.Parse("40000000-0000-0000-0000-000000000107");
+        public static readonly Guid WEB301_Summer2026_A = Guid.Parse("40000000-0000-0000-0000-000000000108");
+        public static readonly Guid WEB301_Fall2026_A = Guid.Parse("40000000-0000-0000-0000-000000000109");
+        public static readonly Guid MATH101_Winter2025_A = Guid.Parse("40000000-0000-0000-0000-00000000010a");
+        public static readonly Guid MATH101_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-00000000010b");
+        public static readonly Guid MATH201_Fall2026_A = Guid.Parse("40000000-0000-0000-0000-00000000010c");
+        public static readonly Guid CS101_Winter2025_A = Guid.Parse("40000000-0000-0000-0000-00000000010d");
+        public static readonly Guid CS101_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-00000000010e");
+        public static readonly Guid CS201_Summer2026_A = Guid.Parse("40000000-0000-0000-0000-00000000010f");
+
+        private static readonly IReadOnlyList<ClassDefinition> ClassDefinitions = new List<ClassDefinition>
+        {
+            new ClassDefinition(SE101_Winter2025_A, "SE101.W25.A", SubjectOfferingSeeder.SE101_Winter2025, TeacherStudentSeeder.Teacher1Id, 42),
+            new ClassDefinition(SE101_Spring2026_A, "SE101.SP26.A", SubjectOfferingSeeder.SE101_Spring2026, TeacherStudentSeeder.Teacher1Id, 48),
+            new ClassDefinition(SE101_Fall2026_A, "SE101.F26.A", SubjectOfferingSeeder.SE101_Fall2026, TeacherStudentSeeder.Teacher2Id, 48),
+
+            new ClassDefinition(SE102_Spring2026_A, "SE102.SP26.A", SubjectOfferingSeeder.SE102_Spring2026, TeacherStudentSeeder.Teacher2Id, 36),
+            new ClassDefinition(SE102_Fall2026_A, "SE102.F26.A", SubjectOfferingSeeder.SE102_Fall2026, TeacherStudentSeeder.Teacher1Id, 36),
+
+            new ClassDefinition(DB201_Winter2025_Evening, "DB201.W25.E", SubjectOfferingSeeder.DB201_Winter2025, TeacherStudentSeeder.Teacher2Id, 32),
+            new ClassDefinition(DB201_Summer2026_A, "DB201.SU26.A", SubjectOfferingSeeder.DB201_Summer2026, TeacherStudentSeeder.Teacher3Id, 40),
+
+            new ClassDefinition(WEB301_Summer2026_A, "WEB301.SU26.A", SubjectOfferingSeeder.WEB301_Summer2026, TeacherStudentSeeder.Teacher4Id, 30),
+            new ClassDefinition(WEB301_Fall2026_A, "WEB301.F26.A", SubjectOfferingSeeder.WEB301_Fall2026, TeacherStudentSeeder.Teacher4Id, 28),
+
+            new ClassDefinition(MATH101_Winter2025_A, "MATH101.W25.A", SubjectOfferingSeeder.MATH101_Winter2025, TeacherStudentSeeder.Teacher3Id, 50),
+            new ClassDefinition(MATH101_Spring2026_A, "MATH101.SP26.A", SubjectOfferingSeeder.MATH101_Spring2026, TeacherStudentSeeder.Teacher3Id, 50),
+            new ClassDefinition(MATH201_Fall2026_A, "MATH201.F26.A", SubjectOfferingSeeder.MATH201_Fall2026, TeacherStudentSeeder.Teacher3Id, 45),
+
+            new ClassDefinition(CS101_Winter2025_A, "CS101.W25.A", SubjectOfferingSeeder.CS101_Winter2025, TeacherStudentSeeder.Teacher2Id, 45),
+            new ClassDefinition(CS101_Spring2026_A, "CS101.SP26.A", SubjectOfferingSeeder.CS101_Spring2026, TeacherStudentSeeder.Teacher2Id, 45),
+            new ClassDefinition(CS201_Summer2026_A, "CS201.SU26.A", SubjectOfferingSeeder.CS201_Summer2026, TeacherStudentSeeder.Teacher1Id, 35)
+        };
 
         public ClassSeeder(FapDbContext context) : base(context) { }
 
         public override async Task SeedAsync()
- {
+        {
             if (await _context.Classes.AnyAsync())
-   {
-       Console.WriteLine("??  Classes already exist. Skipping...");
-                return;
-      }
-
-    var classes = new List<Class>
             {
-    // ===== SE101 Spring 2024 - 2 classes =====
-    new Class
-      {
-    Id = SE101_01_Spring,
-     ClassCode = "SE101.01.S24",
-SubjectOfferingId = SubjectOfferingSeeder.SE101_Spring2024, // ? USE OFFERING!
-       TeacherUserId = TeacherStudentSeeder.Teacher1Id,
-    MaxEnrollment = 40,
-     IsActive = true,
-          CreatedAt = DateTime.UtcNow,
-  UpdatedAt = DateTime.UtcNow
-  },
-     new Class
-     {
-       Id = SE101_02_Spring,
-         ClassCode = "SE101.02.S24",
-       SubjectOfferingId = SubjectOfferingSeeder.SE101_Spring2024, // ? SAME OFFERING
-TeacherUserId = TeacherStudentSeeder.Teacher2Id,
-          MaxEnrollment = 40,
-IsActive = true,
-       CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow
-                },
+                Console.WriteLine("Classes already exist. Skipping seeding...");
+                return;
+            }
 
-  // ===== SE101 Fall 2024 - 1 class =====
-           new Class
+            var timestamp = DateTime.UtcNow;
+            var classes = ClassDefinitions
+                .Select(def => new Class
                 {
-          Id = SE101_01_Fall,
-ClassCode = "SE101.01.F24",
-  SubjectOfferingId = SubjectOfferingSeeder.SE101_Fall2024, // ? FALL OFFERING
-      TeacherUserId = TeacherStudentSeeder.Teacher1Id,
-  MaxEnrollment = 40,
-     IsActive = true,
-   CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow
-     },
-
-         // ===== DB201 Spring 2024 - 2 classes =====
-  new Class
-     {
-    Id = DB201_01_Spring,
-    ClassCode = "DB201.01.S24",
-  SubjectOfferingId = SubjectOfferingSeeder.DB201_Spring2024,
-           TeacherUserId = TeacherStudentSeeder.Teacher2Id,
-       MaxEnrollment = 40,
-      IsActive = true,
-   CreatedAt = DateTime.UtcNow,
-     UpdatedAt = DateTime.UtcNow
-  },
-   new Class
-     {
-   Id = DB201_02_Spring,
-   ClassCode = "DB201.02.S24",
-     SubjectOfferingId = SubjectOfferingSeeder.DB201_Spring2024,
-         TeacherUserId = TeacherStudentSeeder.Teacher3Id,
-MaxEnrollment = 40,
+                    Id = def.Id,
+                    ClassCode = def.ClassCode,
+                    SubjectOfferingId = def.SubjectOfferingId,
+                    TeacherUserId = def.TeacherUserId,
+                    MaxEnrollment = def.MaxEnrollment,
                     IsActive = true,
-        CreatedAt = DateTime.UtcNow,
-           UpdatedAt = DateTime.UtcNow
-             },
-
-       // ===== WEB301 Summer 2024 - 1 class =====
-   new Class
-     {
-  Id = WEB301_01_Summer,
-            ClassCode = "WEB301.01.Su24",
-          SubjectOfferingId = SubjectOfferingSeeder.WEB301_Summer2024,
-         TeacherUserId = TeacherStudentSeeder.Teacher4Id,
-             MaxEnrollment = 30,
-    IsActive = true,
-     CreatedAt = DateTime.UtcNow,
-  UpdatedAt = DateTime.UtcNow
-  },
-
-           // ===== MATH101 Spring 2024 - 1 class =====
-            new Class
-     {
-         Id = MATH101_01_Spring,
-     ClassCode = "MATH101.01.S24",
-       SubjectOfferingId = SubjectOfferingSeeder.MATH101_Spring2024,
- TeacherUserId = TeacherStudentSeeder.Teacher3Id,
-           MaxEnrollment = 50,
-          IsActive = true,
-          CreatedAt = DateTime.UtcNow,
-       UpdatedAt = DateTime.UtcNow
-     },
-
-// ===== CS101 Spring 2024 - 1 class =====
-      new Class
-  {
-           Id = CS101_01_Spring,
-ClassCode = "CS101.01.S24",
-      SubjectOfferingId = SubjectOfferingSeeder.CS101_Spring2024,
-  TeacherUserId = TeacherStudentSeeder.Teacher1Id,
-    MaxEnrollment = 45,
-        IsActive = true,
-   CreatedAt = DateTime.UtcNow,
-           UpdatedAt = DateTime.UtcNow
-      }
-   };
+                    CreatedAt = timestamp,
+                    UpdatedAt = timestamp
+                })
+                .ToList();
 
             await _context.Classes.AddRangeAsync(classes);
             await SaveAsync("Classes");
 
-Console.WriteLine($"?? Created {classes.Count} classes linked to SubjectOfferings");
-      Console.WriteLine("? Classes can now belong to semester-specific subject offerings!");
-    }
+            Console.WriteLine($"Created {classes.Count} classes linked to semester-specific offerings");
+        }
+
+        private sealed record ClassDefinition(Guid Id, string ClassCode, Guid SubjectOfferingId, Guid TeacherUserId, int MaxEnrollment);
     }
 }

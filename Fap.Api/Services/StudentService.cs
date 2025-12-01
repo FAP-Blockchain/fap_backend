@@ -73,7 +73,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting students: {ex.Message}");
+                _logger.LogError($"Error getting students: {ex.Message}");
                 throw;
             }
         }
@@ -100,7 +100,7 @@ namespace Fap.Api.Services
                     IsActive = student.User?.IsActive ?? false,
                     CreatedAt = student.User?.CreatedAt ?? DateTime.MinValue,
                     
-                    // ? NEW: Contact & Blockchain Info
+                    // Contact & blockchain info
                     PhoneNumber = student.User?.PhoneNumber,
                     WalletAddress = student.User?.WalletAddress,
                     ProfileImageUrl = student.User?.ProfileImageUrl,
@@ -139,7 +139,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting student {id}: {ex.Message}");
+                _logger.LogError($"Error getting student {id}: {ex.Message}");
                 throw;
             }
         }
@@ -158,7 +158,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting student profile for user {userId}: {ex.Message}");
+                _logger.LogError($"Error getting student profile for user {userId}: {ex.Message}");
                 throw;
             }
         }
@@ -241,7 +241,7 @@ namespace Fap.Api.Services
         /// <summary>
         /// Get students eligible for a specific class
         /// 
-        /// ✅ CURRICULUM-BASED ELIGIBILITY LOGIC:
+    /// Curriculum-based eligibility logic:
         /// 1. Student must have a curriculum that includes this subject
         /// 2. Student must not be graduated
         /// 3. Student must be active

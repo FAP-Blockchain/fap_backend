@@ -7,7 +7,7 @@ namespace Fap.Api.Mappings
 {
     /// <summary>
     /// AutoMapper profile for Class entities
-    /// ? UPDATED: Uses SubjectOffering pattern
+    /// Uses SubjectOffering relationships for subject and semester data
     /// </summary>
     public class ClassMappingProfile : Profile
     {
@@ -21,7 +21,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.ClassCode))
 
-                // ? CHANGED: Get subject info via SubjectOffering
+                // Subject info via SubjectOffering
                 .ForMember(dest => dest.SubjectOfferingId, opt => opt.MapFrom(src => src.SubjectOfferingId))
                 .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src =>
                     src.SubjectOffering != null ? src.SubjectOffering.SubjectId : Guid.Empty))
@@ -38,7 +38,7 @@ namespace Fap.Api.Mappings
                         ? src.SubjectOffering.Subject.Credits
                         : 0))
 
-                // ? CHANGED: Get semester info via SubjectOffering
+                // Semester info via SubjectOffering
                 .ForMember(dest => dest.SemesterId, opt => opt.MapFrom(src =>
                     src.SubjectOffering != null ? src.SubjectOffering.SemesterId : Guid.Empty))
                 .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src =>
@@ -59,7 +59,7 @@ namespace Fap.Api.Mappings
                         ? src.Teacher.User.Email
                         : null))
                 .ForMember(dest => dest.TeacherPhone, opt => opt.MapFrom(src =>
-                    src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.PhoneNumber : null))  // ? FIXED: Use User.PhoneNumber
+                    src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.PhoneNumber : null))
 
                 // Class info
                 .ForMember(dest => dest.MaxEnrollment, opt => opt.MapFrom(src => src.MaxEnrollment))
@@ -72,7 +72,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.ClassCode))
 
-                // ? CHANGED: Subject via SubjectOffering
+                // Subject info via SubjectOffering
                 .ForMember(dest => dest.SubjectOfferingId, opt => opt.MapFrom(src => src.SubjectOfferingId))
                 .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src =>
                     src.SubjectOffering != null ? src.SubjectOffering.SubjectId : Guid.Empty))
@@ -89,7 +89,7 @@ namespace Fap.Api.Mappings
                         ? src.SubjectOffering.Subject.Credits
                         : 0))
 
-                // ? CHANGED: Semester via SubjectOffering
+                // Semester info via SubjectOffering
                 .ForMember(dest => dest.SemesterId, opt => opt.MapFrom(src =>
                     src.SubjectOffering != null ? src.SubjectOffering.SemesterId : Guid.Empty))
                 .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src =>

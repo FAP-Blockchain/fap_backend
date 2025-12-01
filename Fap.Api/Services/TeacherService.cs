@@ -47,7 +47,7 @@ namespace Fap.Api.Services
                     Email = t.User?.Email ?? "N/A",
                     HireDate = t.HireDate,
                     Specialization = t.Specialization,
-                    PhoneNumber = t.User?.PhoneNumber,  // ? CHANGED: Now from User.PhoneNumber
+                        PhoneNumber = t.User?.PhoneNumber,
                     IsActive = t.User?.IsActive ?? false,
                     TotalClasses = t.Classes?.Count ?? 0,
                     ProfileImageUrl = t.User?.ProfileImageUrl
@@ -62,7 +62,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting teachers: {ex.Message}");
+                _logger.LogError($"Error getting teachers: {ex.Message}");
                 throw;
             }
         }
@@ -80,7 +80,7 @@ namespace Fap.Api.Services
                 Email = t.User?.Email ?? "N/A",
                 HireDate = t.HireDate,
                 Specialization = t.Specialization,
-                PhoneNumber = t.User?.PhoneNumber,  // ? CHANGED: Now from User.PhoneNumber
+                PhoneNumber = t.User?.PhoneNumber,
                 IsActive = t.User?.IsActive ?? false,
                 TotalClasses = t.Classes?.Count ?? 0,
                 ProfileImageUrl = t.User?.ProfileImageUrl
@@ -104,7 +104,7 @@ namespace Fap.Api.Services
                     Email = teacher.User?.Email ?? "N/A",
                     HireDate = teacher.HireDate,
                     Specialization = teacher.Specialization,
-                    PhoneNumber = teacher.User?.PhoneNumber,  // ? CHANGED: Now from User.PhoneNumber
+                    PhoneNumber = teacher.User?.PhoneNumber,
                     IsActive = teacher.User?.IsActive ?? false,
                     CreatedAt = teacher.User?.CreatedAt ?? DateTime.MinValue,
                     ProfileImageUrl = teacher.User?.ProfileImageUrl,
@@ -129,7 +129,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting teacher {id}: {ex.Message}");
+                _logger.LogError($"Error getting teacher {id}: {ex.Message}");
                 throw;
             }
         }

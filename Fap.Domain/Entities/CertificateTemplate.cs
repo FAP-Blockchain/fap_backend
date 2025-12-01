@@ -20,15 +20,15 @@ namespace Fap.Domain.Entities
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        [MaxLength(200)]
-        public string? TemplateFileUrl { get; set; } // IPFS/Cloud template
+    [MaxLength(200)]
+    public string? TemplateFileUrl { get; set; } // IPFS/Cloud template
 
-        // ✅ NEW: TEMPLATE TYPE
-        [Required, MaxLength(50)]
-        public string TemplateType { get; set; } = "SubjectCompletion"; // "SubjectCompletion", "SemesterCompletion", "RoadmapCompletion"
+    // Template type
+    [Required, MaxLength(50)]
+    public string TemplateType { get; set; } = "SubjectCompletion"; // "SubjectCompletion", "SemesterCompletion", "RoadmapCompletion"
 
-        // ✅ NEW: TEMPLATE DESIGN
-        public string? TemplateContent { get; set; } // HTML template with placeholders
+    // Template design
+    public string? TemplateContent { get; set; } // HTML template with placeholders
 
         [MaxLength(500)]
         public string? HeaderImagePath { get; set; }
@@ -42,29 +42,29 @@ namespace Fap.Domain.Entities
         [MaxLength(500)]
         public string? LogoImagePath { get; set; }
 
-        [MaxLength(500)]
-        public string? SignatureImagePath { get; set; }
+    [MaxLength(500)]
+    public string? SignatureImagePath { get; set; }
 
-        // ✅ NEW: TEMPLATE VARIABLES (JSON)
-        public string? TemplateVariables { get; set; } // JSON: {"StudentName": "{{StudentName}}", ...}
+    // Template variables (JSON)
+    public string? TemplateVariables { get; set; } // JSON: {"StudentName": "{{StudentName}}", ...}
 
-        // ✅ NEW: SETTINGS
-        [MaxLength(20)]
-        public string PageSize { get; set; } = "A4"; // A4, Letter
+    // Template settings
+    [MaxLength(20)]
+    public string PageSize { get; set; } = "A4"; // A4, Letter
 
-        [MaxLength(20)]
-        public string Orientation { get; set; } = "Landscape"; // Landscape, Portrait
+    [MaxLength(20)]
+    public string Orientation { get; set; } = "Landscape"; // Landscape, Portrait
 
-        public string? CustomStyles { get; set; } // CSS styles
+    public string? CustomStyles { get; set; } // CSS styles
 
-        // ✅ NEW: SAMPLE/DEMO FLAG
-        public bool IsSample { get; set; } = false; // Pre-built sample templates
+    // Sample/demo flag
+    public bool IsSample { get; set; } = false; // Pre-built sample templates
 
-        public bool IsActive { get; set; } = true;
-        public bool IsDefault { get; set; } = false;
+    public bool IsActive { get; set; } = true;
+    public bool IsDefault { get; set; } = false;
 
-        // ✅ NEW: VERSION CONTROL
-        public int Version { get; set; } = 1;
+    // Version control
+    public int Version { get; set; } = 1;
 
         // Timestamps
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

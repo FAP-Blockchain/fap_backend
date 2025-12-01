@@ -1,11 +1,11 @@
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Wallet;
 using Fap.Domain.Repositories;
-using NBitcoin;  // ? For Mnemonic, Wordlist, WordCount
+using NBitcoin;  // For Mnemonic, Wordlist, WordCount
 using Nethereum.HdWallet;
 using Nethereum.Web3.Accounts;
 using System.Text.RegularExpressions;
-using WalletEntity = Fap.Domain.Entities.Wallet;  // ? Alias to avoid conflict
+using WalletEntity = Fap.Domain.Entities.Wallet;  // Alias to avoid conflict
 
 namespace Fap.Api.Services
 {
@@ -37,16 +37,16 @@ namespace Fap.Api.Services
 
             try
             {
-                _logger.LogInformation("?? Generating new Ethereum wallet...");
+                _logger.LogInformation("Generating new Ethereum wallet...");
 
                 // 1. Generate HD Wallet with secure mnemonic
                 var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-                var hdWallet = new Wallet(mnemonic.ToString(), string.Empty);  // ? Convert mnemonic to string
+                var hdWallet = new Wallet(mnemonic.ToString(), string.Empty);
 
                 // 2. Get first account from HD wallet (derivation path: m/44'/60'/0'/0/0)
                 var account = hdWallet.GetAccount(0);
 
-                _logger.LogInformation($"? Generated wallet address: {account.Address}");
+                _logger.LogInformation($"Generated wallet address: {account.Address}");
 
                 // 3. Encrypt private key before storage
                 var encryptedPrivateKey = await _encryptionService.EncryptAsync(account.PrivateKey);
@@ -66,7 +66,7 @@ namespace Fap.Api.Services
                 await _uow.Wallets.AddAsync(wallet);
                 await _uow.SaveChangesAsync();
 
-                _logger.LogInformation($"? Wallet saved to database: {wallet.Address}");
+                _logger.LogInformation($"Wallet saved to database: {wallet.Address}");
 
                 result.Success = true;
                 result.Message = "Wallet generated successfully";
@@ -82,7 +82,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "? Failed to generate wallet");
+                _logger.LogError(ex, "Failed to generate wallet");
                 result.Success = false;
                 result.Message = "Failed to generate wallet";
                 result.Errors.Add(ex.Message);
@@ -96,7 +96,7 @@ namespace Fap.Api.Services
             {
                 if (!IsValidAddress(address))
                 {
-                    _logger.LogWarning($"?? Invalid wallet address format: {address}");
+                    _logger.LogWarning($"Invalid wallet address format: {address}");
                     return null;
                 }
 
@@ -104,7 +104,7 @@ namespace Fap.Api.Services
 
                 if (wallet == null)
                 {
-                    _logger.LogWarning($"?? Wallet not found: {address}");
+                    _logger.LogWarning($"Wallet not found: {address}");
                     return null;
                 }
 
@@ -118,7 +118,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"? Error retrieving wallet: {address}");
+                _logger.LogError(ex, $"Error retrieving wallet: {address}");
                 return null;
             }
         }
@@ -144,7 +144,7 @@ namespace Fap.Api.Services
 
                     if (existingWallet != null)
                     {
-                        _logger.LogInformation($"? Using existing wallet: {existingAddress}");
+                        _logger.LogInformation($"Using existing wallet: {existingAddress}");
                         result.Success = true;
                         result.Message = "Using existing wallet";
                         result.Wallet = existingWallet;
@@ -160,7 +160,7 @@ namespace Fap.Api.Services
 
                     // Wallet address provided but not in our database
                     // This is valid - user may have external wallet
-                    _logger.LogInformation($"?? External wallet address provided: {existingAddress}");
+                    _logger.LogInformation($"External wallet address provided: {existingAddress}");
                     result.Success = true;
                     result.Message = "Using external wallet address";
                     result.Wallet = new WalletInfo
@@ -174,7 +174,7 @@ namespace Fap.Api.Services
                 }
 
                 // Case 2: No address provided - generate new wallet
-                _logger.LogInformation("?? No wallet provided, generating new one...");
+                _logger.LogInformation("No wallet provided, generating new one...");
                 result = await GenerateWalletAsync();
 
                 // Associate with user if provided
@@ -187,7 +187,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "? Error in GetOrCreateWallet");
+                _logger.LogError(ex, "Error in GetOrCreateWallet");
                 result.Success = false;
                 result.Message = "Failed to get or create wallet";
                 result.Errors.Add(ex.Message);
@@ -216,13 +216,13 @@ namespace Fap.Api.Services
                 // Update last used timestamp
                 await UpdateLastUsedAsync(address);
 
-                _logger.LogInformation($"? Account retrieved for signing: {address}");
+                _logger.LogInformation($"Account retrieved for signing: {address}");
 
                 return account;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"? Failed to get account for signing: {address}");
+                _logger.LogError(ex, $"Failed to get account for signing: {address}");
                 throw;
             }
         }
@@ -246,7 +246,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"? Error checking wallet existence: {address}");
+                _logger.LogError(ex, $"Error checking wallet existence: {address}");
                 return false;
             }
         }
@@ -259,7 +259,7 @@ namespace Fap.Api.Services
 
                 if (wallet == null)
                 {
-                    _logger.LogWarning($"?? Cannot associate wallet - not found: {address}");
+                    _logger.LogWarning($"Cannot associate wallet - not found: {address}");
                     return false;
                 }
 
@@ -267,12 +267,12 @@ namespace Fap.Api.Services
                 _uow.Wallets.Update(wallet);
                 await _uow.SaveChangesAsync();
 
-                _logger.LogInformation($"? Wallet {address} associated with user {userId}");
+                _logger.LogInformation($"Wallet {address} associated with user {userId}");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"? Failed to associate wallet with user");
+                _logger.LogError(ex, "Failed to associate wallet with user");
                 return false;
             }
         }
@@ -292,7 +292,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"?? Failed to update last used timestamp for {address}");
+                _logger.LogWarning(ex, $"Failed to update last used timestamp for {address}");
                 // Non-critical error, don't throw
             }
         }

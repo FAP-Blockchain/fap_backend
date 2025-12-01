@@ -5,8 +5,7 @@ using Fap.Domain.Entities;
 namespace Fap.Api.Mappings
 {
     /// <summary>
-    /// AutoMapper profile for Enrollment entities
-    /// ? UPDATED: Uses SubjectOffering pattern via Class
+    /// AutoMapper profile for Enrollment entities using SubjectOffering data via Class navigation
     /// </summary>
     public class EnrollmentMappingProfile : Profile
     {
@@ -32,7 +31,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src =>
                     src.Class != null ? src.Class.ClassCode : null))
-                // ? CHANGED: Get subject info via SubjectOffering
+                // Subject info via SubjectOffering
                 .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src =>
                     src.Class != null && src.Class.SubjectOffering != null && src.Class.SubjectOffering.Subject != null
                         ? src.Class.SubjectOffering.Subject.SubjectName
@@ -65,7 +64,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src =>
                     src.Class != null ? src.Class.ClassCode : null))
-                // ? CHANGED: Get subject info via SubjectOffering
+                // Subject info via SubjectOffering
                 .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src =>
                     src.Class != null && src.Class.SubjectOffering != null
                         ? src.Class.SubjectOffering.SubjectId
@@ -93,7 +92,7 @@ namespace Fap.Api.Mappings
                     src.Class != null && src.Class.Teacher != null && src.Class.Teacher.User != null
                         ? src.Class.Teacher.User.Email
                         : null))
-                // ? CHANGED: Get semester info via SubjectOffering
+                // Semester info via SubjectOffering
                 .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src =>
                     src.Class != null && src.Class.SubjectOffering != null && src.Class.SubjectOffering.Semester != null
                         ? src.Class.SubjectOffering.Semester.Name
@@ -112,7 +111,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src =>
                     src.Class != null ? src.Class.ClassCode : null))
-                // ? CHANGED: Get subject info via SubjectOffering
+                // Subject info via SubjectOffering
                 .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src =>
                     src.Class != null && src.Class.SubjectOffering != null && src.Class.SubjectOffering.Subject != null
                         ? src.Class.SubjectOffering.Subject.SubjectCode
@@ -129,7 +128,7 @@ namespace Fap.Api.Mappings
                     src.Class != null && src.Class.Teacher != null && src.Class.Teacher.User != null
                         ? src.Class.Teacher.User.FullName
                         : null))
-                // ? CHANGED: Get semester info via SubjectOffering
+                // Semester info via SubjectOffering
                 .ForMember(dest => dest.SemesterName, opt => opt.MapFrom(src =>
                     src.Class != null && src.Class.SubjectOffering != null && src.Class.SubjectOffering.Semester != null
                         ? src.Class.SubjectOffering.Semester.Name

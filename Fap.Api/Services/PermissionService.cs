@@ -68,7 +68,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting permissions: {ex.Message}");
+                _logger.LogError($"Error getting permissions: {ex.Message}");
                 throw;
             }
         }
@@ -89,7 +89,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting permissions for role {roleId}: {ex.Message}");
+                _logger.LogError($"Error getting permissions for role {roleId}: {ex.Message}");
                 throw;
             }
         }

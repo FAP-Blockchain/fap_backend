@@ -22,7 +22,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
                 .ForMember(dest => dest.HireDate, opt => opt.MapFrom(src => src.HireDate))
                 .ForMember(dest => dest.Specialization, opt => opt.MapFrom(src => src.Specialization))
-                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))  // ? FIXED: Use User.PhoneNumber
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
                 .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.Classes != null ? src.Classes.Count : 0));
 
@@ -33,7 +33,7 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
                 .ForMember(dest => dest.HireDate, opt => opt.MapFrom(src => src.HireDate))
                 .ForMember(dest => dest.Specialization, opt => opt.MapFrom(src => src.Specialization))
-                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))  // ? FIXED: Use User.PhoneNumber
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.User.IsActive))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt))
                 .ForMember(dest => dest.TotalClasses, opt => opt.MapFrom(src => src.Classes != null ? src.Classes.Count : 0))

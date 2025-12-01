@@ -74,7 +74,7 @@ namespace Fap.Api.Services
 
                 if (request.SemesterId.HasValue)
                 {
-                    query = query.Where(s => s.Class.SubjectOffering.SemesterId == request.SemesterId.Value); // ? FIXED
+                    query = query.Where(s => s.Class.SubjectOffering.SemesterId == request.SemesterId.Value);
                 }
 
                 if (request.ClassId.HasValue)
@@ -173,8 +173,8 @@ namespace Fap.Api.Services
                 // Get all classes taught by teacher in this semester
                 var allClasses = await _uow.Classes.GetAllWithDetailsAsync();
                 var teacherClasses = allClasses
-   .Where(c => c.TeacherUserId == teacherId && c.SubjectOffering.SemesterId == semesterId) // ? FIXED
-  .ToList();
+                    .Where(c => c.TeacherUserId == teacherId && c.SubjectOffering.SemesterId == semesterId)
+                    .ToList();
 
                 var classSummaries = new List<ClassScheduleSummary>();
 
@@ -186,8 +186,8 @@ namespace Fap.Api.Services
                     {
                         ClassId = classEntity.Id,
                         ClassCode = classEntity.ClassCode,
-                        SubjectName = classEntity.SubjectOffering?.Subject?.SubjectName ?? "Unknown", // ? FIXED
-                        SubjectCode = classEntity.SubjectOffering?.Subject?.SubjectCode ?? "Unknown", // ? FIXED
+                        SubjectName = classEntity.SubjectOffering?.Subject?.SubjectName ?? "Unknown",
+                        SubjectCode = classEntity.SubjectOffering?.Subject?.SubjectCode ?? "Unknown",
                         TeacherName = classEntity.Teacher?.User?.FullName ?? "Unknown",
                         TotalSlots = slots.Count,
                         CompletedSlots = slots.Count(s => s.Status == "Completed"),
@@ -372,8 +372,8 @@ namespace Fap.Api.Services
                     {
                         ClassId = classEntity.Id,
                         ClassCode = classEntity.ClassCode,
-                        SubjectName = classEntity.SubjectOffering?.Subject?.SubjectName ?? "Unknown", // ? FIXED
-                        SubjectCode = classEntity.SubjectOffering?.Subject?.SubjectCode ?? "Unknown", // ? FIXED
+                        SubjectName = classEntity.SubjectOffering?.Subject?.SubjectName ?? "Unknown",
+                        SubjectCode = classEntity.SubjectOffering?.Subject?.SubjectCode ?? "Unknown",
                         TeacherName = classEntity.Teacher?.User?.FullName ?? "Unknown",
                         TotalSlots = slots.Count,
                         CompletedSlots = slots.Count(s => s.Status == "Completed"),
@@ -645,10 +645,10 @@ namespace Fap.Api.Services
                 SlotId = slot.Id,
                 ClassId = slot.ClassId,
                 ClassCode = slot.Class?.ClassCode ?? "Unknown",
-                SubjectId = slot.Class?.SubjectOffering?.SubjectId ?? Guid.Empty, // ? FIXED
-                SubjectName = slot.Class?.SubjectOffering?.Subject?.SubjectName ?? "Unknown", // ? FIXED
-                SubjectCode = slot.Class?.SubjectOffering?.Subject?.SubjectCode ?? "Unknown", // ? FIXED
-                Credits = slot.Class?.SubjectOffering?.Subject?.Credits ?? 0, // ? FIXED
+                SubjectId = slot.Class?.SubjectOffering?.SubjectId ?? Guid.Empty,
+                SubjectName = slot.Class?.SubjectOffering?.Subject?.SubjectName ?? "Unknown",
+                SubjectCode = slot.Class?.SubjectOffering?.Subject?.SubjectCode ?? "Unknown",
+                Credits = slot.Class?.SubjectOffering?.Subject?.Credits ?? 0,
                 Date = slot.Date,
                 DayOfWeek = slot.Date.ToString("dddd", CultureInfo.InvariantCulture),
                 TimeSlotId = slot.TimeSlotId,

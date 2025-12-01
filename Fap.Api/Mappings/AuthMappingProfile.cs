@@ -88,14 +88,14 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name))
                 
-                // ? NEW: Contact Info
+                // Contact info
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 
                 // Student/Teacher Info
                 .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.Student != null ? src.Student.StudentCode : null))
                 .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.TeacherCode : null))
                 
-                // ? Blockchain Info
+                // Blockchain info
                 .ForMember(dest => dest.WalletAddress, opt => opt.MapFrom(src => src.WalletAddress))
                 .ForMember(dest => dest.BlockchainTxHash, opt => opt.MapFrom(src => src.BlockchainTxHash))
                 .ForMember(dest => dest.BlockNumber, opt => opt.MapFrom(src => src.BlockNumber))

@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Fap.Api.Interfaces;
 using Fap.Domain.DTOs.Semester;
-using Fap.Domain.DTOs.Subject; // ✅ ADD THIS
+using Fap.Domain.DTOs.Subject;
 using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 
@@ -70,7 +70,7 @@ namespace Fap.Api.Services
                    Name = s.Name,
                    StartDate = s.StartDate,
                    EndDate = s.EndDate,
-                   TotalSubjects = s.SubjectOfferings.Count, // ✅ FIXED
+                   TotalSubjects = s.SubjectOfferings.Count,
                    IsActive = s.IsActive,
                    IsClosed = s.IsClosed
                })
@@ -94,12 +94,12 @@ namespace Fap.Api.Services
                 EndDate = semester.EndDate,
                 IsActive = semester.IsActive,
                 IsClosed = semester.IsClosed,
-                TotalSubjects = semester.SubjectOfferings?.Count ?? 0, // ✅ FIXED
-                TotalClasses = semester.SubjectOfferings?.Sum(so => so.Classes?.Count ?? 0) ?? 0, // ✅ FIXED
-                TotalStudentsEnrolled = semester.SubjectOfferings? // ✅ FIXED
+                TotalSubjects = semester.SubjectOfferings?.Count ?? 0,
+                TotalClasses = semester.SubjectOfferings?.Sum(so => so.Classes?.Count ?? 0) ?? 0,
+                TotalStudentsEnrolled = semester.SubjectOfferings?
              .SelectMany(so => so.Classes ?? Enumerable.Empty<Class>())
             .Sum(c => c.Members?.Count ?? 0) ?? 0,
-                SubjectOfferings = semester.SubjectOfferings?.Select(so => new SubjectOfferingDto // ✅ FIXED
+                SubjectOfferings = semester.SubjectOfferings?.Select(so => new SubjectOfferingDto
                 {
                     Id = so.Id,
                     SubjectId = so.SubjectId,
@@ -163,7 +163,7 @@ namespace Fap.Api.Services
                 await _uow.Semesters.AddAsync(semester);
                 await _uow.SaveChangesAsync();
 
-                // ✅✅ AUTO-CREATE SubjectOfferings for ALL active subjects
+                // Auto-create subject offerings for all active subjects
                 var activeSubjects = await _uow.Subjects.FindAsync(s => s.IsActive);
                 var subjectOfferingsCreated = 0;
 
@@ -252,12 +252,12 @@ namespace Fap.Api.Services
                 _uow.Semesters.Update(semester);
                 await _uow.SaveChangesAsync();
 
-                _logger.LogInformation($"✅ Semester updated: {semester.Name}");
+                _logger.LogInformation($"Semester updated: {semester.Name}");
                 return (true, "Semester updated successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error updating semester: {ex.Message}");
+                _logger.LogError($"Error updating semester: {ex.Message}");
                 return (false, "An error occurred while updating the semester");
             }
         }
@@ -282,12 +282,12 @@ namespace Fap.Api.Services
                 await _uow.SaveChangesAsync();
 
                 var state = isActive ? "activated" : "deactivated";
-                _logger.LogInformation($"✅ Semester {state}: {semester.Name}");
+                _logger.LogInformation($"Semester {state}: {semester.Name}");
                 return (true, $"Semester {state} successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error updating semester active status: {ex.Message}");
+                _logger.LogError($"Error updating semester active status: {ex.Message}");
                 return (false, "An error occurred while updating semester status");
             }
         }
@@ -317,12 +317,12 @@ namespace Fap.Api.Services
                 _uow.Semesters.Update(semester);
                 await _uow.SaveChangesAsync();
 
-                _logger.LogInformation($"✅ Semester closed: {semester.Name}");
+                _logger.LogInformation($"Semester closed: {semester.Name}");
                 return (true, "Semester closed successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error closing semester: {ex.Message}");
+                _logger.LogError($"Error closing semester: {ex.Message}");
                 return (false, "An error occurred while closing the semester");
             }
         }

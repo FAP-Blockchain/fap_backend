@@ -257,7 +257,7 @@ namespace Fap.Api.Services
             {
                 ClassId = classId,
                 ClassCode = classEntity.ClassCode,
-                SubjectName = classEntity.SubjectOffering.Subject.SubjectName, // ? FIXED
+                SubjectName = classEntity.SubjectOffering.Subject.SubjectName,
                 TeacherName = classEntity.Teacher.User.FullName,
                 TotalSlots = totalSlots,
                 TotalStudents = students.Count,

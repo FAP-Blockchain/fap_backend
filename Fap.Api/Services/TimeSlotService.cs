@@ -29,7 +29,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting time slots: {ex.Message}");
+                _logger.LogError($"Error getting time slots: {ex.Message}");
                 throw;
             }
         }
@@ -44,7 +44,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting time slot {id}: {ex.Message}");
+                _logger.LogError($"Error getting time slot {id}: {ex.Message}");
                 throw;
             }
         }
@@ -97,13 +97,13 @@ namespace Fap.Api.Services
                 response.Success = true;
                 response.Message = "Time slot created successfully";
                 response.TimeSlotId = newTimeSlot.Id;
-                _logger.LogInformation($"? Time slot {request.Name} created successfully");
+                _logger.LogInformation($"Time slot {request.Name} created successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error creating time slot: {ex.Message}");
+                _logger.LogError($"Error creating time slot: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Time slot creation failed";
                 return response;
@@ -156,13 +156,13 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "Time slot updated successfully";
-                _logger.LogInformation($"? Time slot {id} updated successfully");
+                _logger.LogInformation($"Time slot {id} updated successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error updating time slot {id}: {ex.Message}");
+                _logger.LogError($"Error updating time slot {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Time slot update failed";
                 return response;
@@ -192,13 +192,13 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "Time slot deleted successfully";
-                _logger.LogInformation($"? Time slot {id} deleted successfully");
+                _logger.LogInformation($"Time slot {id} deleted successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error deleting time slot {id}: {ex.Message}");
+                _logger.LogError($"Error deleting time slot {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Time slot deletion failed";
                 return response;

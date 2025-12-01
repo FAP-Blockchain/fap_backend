@@ -3,11 +3,10 @@
 namespace Fap.Infrastructure.Data.Seed
 {
     /// <summary>
-    /// Master data seeder - orchestrates all individual seeders
-    /// ✅ Refactored into multiple small files for maintainability
-    /// ✅ Updated to use SubjectOffering pattern for multi-semester support
-    /// ✅ ENHANCED: Added all missing seeders for complete test coverage
-    /// ✅ COMPLETE: All core database tables now have seed data
+    /// Master data seeder - orchestrates all individual seeders.
+    /// Refactored into multiple small files for maintainability.
+    /// Updated to use SubjectOffering pattern for multi-semester support.
+    /// Adds missing seeders so every core table has sample data.
     /// </summary>
     public static class DataSeeder
     {
@@ -17,13 +16,13 @@ namespace Fap.Infrastructure.Data.Seed
             if (await context.TimeSlots.AnyAsync())
             {
                 Console.WriteLine("==============================================");
-                Console.WriteLine("✅ Seed data already exists. Skipping seeding.");
+                Console.WriteLine("Seed data already exists. Skipping seeding.");
                 Console.WriteLine("==============================================");
                 return;
             }
 
             Console.WriteLine("==============================================");
-            Console.WriteLine("🌱 Starting database seeding...");
+            Console.WriteLine("Starting database seeding...");
             Console.WriteLine("==============================================");
 
             try
@@ -32,7 +31,7 @@ namespace Fap.Infrastructure.Data.Seed
                 // 1. Roles (no dependencies)
                 await new RoleSeeder(context).SeedAsync();
 
-                // 2. Permissions (depends on Roles) ✨ NEW
+                // 2. Permissions (depends on Roles)
                 await new PermissionSeeder(context).SeedAsync();
 
                 // 3. Users (depends on Roles)
@@ -53,7 +52,7 @@ namespace Fap.Infrastructure.Data.Seed
                 // 8. Curriculum Subjects (depends on Curriculums & Subjects)
                 await new CurriculumSubjectSeeder(context).SeedAsync();
 
-                // 9. Subject Criteria (depends on Subjects) ✨ NEW
+                // 9. Subject Criteria (depends on Subjects)
                 await new SubjectCriteriaSeeder(context).SeedAsync();
 
                 // 10. TimeSlots (no dependencies)
@@ -86,67 +85,65 @@ namespace Fap.Infrastructure.Data.Seed
                 // 19. Student Roadmaps (depends on Students, Subjects, Semesters)
                 await new StudentRoadmapSeeder(context).SeedAsync();
 
-                // 20. Refresh Tokens (depends on Users) ✨ NEW
+                // 20. Refresh Tokens (depends on Users)
                 await new RefreshTokenSeeder(context).SeedAsync();
 
-                // 21. OTPs (depends on Users) ✨ NEW
+                // 21. OTPs (depends on Users)
                 await new OtpSeeder(context).SeedAsync();
 
-                // 22. Action Logs (depends on Users, Credentials, etc.) ✨ NEW - LAST
+                // 22. Action Logs (depends on Users, Credentials, etc.)
                 await new ActionLogSeeder(context).SeedAsync();
 
                 // Final save
                 await context.SaveChangesAsync();
 
                 Console.WriteLine("==============================================");
-                Console.WriteLine("✅ Database seeding completed successfully!");
+                Console.WriteLine("Database seeding completed successfully.");
                 Console.WriteLine("==============================================");
                 Console.WriteLine();
-                Console.WriteLine("📊 SEED DATA SUMMARY:");
+                Console.WriteLine("Seed data summary:");
                 Console.WriteLine($"   • Roles: {await context.Roles.CountAsync()}");
-                Console.WriteLine($"   • Permissions: {await context.Permissions.CountAsync()} ✨ NEW!");
+                Console.WriteLine($"   • Permissions: {await context.Permissions.CountAsync()}");
                 Console.WriteLine($"   • Users: {await context.Users.CountAsync()}");
-                Console.WriteLine($"   • Curriculums: {await context.Curriculums.CountAsync()} ✨ NEW!");
-                Console.WriteLine($"   • Curriculum Subjects: {await context.CurriculumSubjects.CountAsync()} ✨ NEW!");
+                Console.WriteLine($"   • Curriculums: {await context.Curriculums.CountAsync()}");
+                Console.WriteLine($"   • Curriculum Subjects: {await context.CurriculumSubjects.CountAsync()}");
                 Console.WriteLine($"   • Teachers: {await context.Teachers.CountAsync()}");
                 Console.WriteLine($"   • Students: {await context.Students.CountAsync()}");
                 Console.WriteLine($"   • Semesters: {await context.Semesters.CountAsync()}");
                 Console.WriteLine($"   • Subjects (Master): {await context.Subjects.CountAsync()}");
-                Console.WriteLine($"   • SubjectOfferings: {await context.SubjectOfferings.CountAsync()} ✨");
-                Console.WriteLine($"   • SubjectCriteria: {await context.SubjectCriteria.CountAsync()} ✨ NEW!");
+                Console.WriteLine($"   • SubjectOfferings: {await context.SubjectOfferings.CountAsync()}");
+                Console.WriteLine($"   • SubjectCriteria: {await context.SubjectCriteria.CountAsync()}");
                 Console.WriteLine($"   • TimeSlots: {await context.TimeSlots.CountAsync()}");
                 Console.WriteLine($"   • Classes: {await context.Classes.CountAsync()}");
                 Console.WriteLine($"   • Class Members: {await context.ClassMembers.CountAsync()}");
                 Console.WriteLine($"   • Enrollments: {await context.Enrolls.CountAsync()}");
-                Console.WriteLine($"   • Slots: {await context.Slots.CountAsync()} ✨");
-                Console.WriteLine($"   • Attendances: {await context.Attendances.CountAsync()} ✨");
-                Console.WriteLine($"   • Grade Components: {await context.GradeComponents.CountAsync()} ✨");
-                Console.WriteLine($"   • Grades: {await context.Grades.CountAsync()} ✨");
-                Console.WriteLine($"   • Certificate Templates: {await context.CertificateTemplates.CountAsync()} ✨");
-                Console.WriteLine($"   • Credentials: {await context.Credentials.CountAsync()} ✨");
-                Console.WriteLine($"   • Student Roadmaps: {await context.StudentRoadmaps.CountAsync()} ✨");
-                Console.WriteLine($"   • Refresh Tokens: {await context.RefreshTokens.CountAsync()} ✨ NEW!");
-                Console.WriteLine($"   • OTPs: {await context.Otps.CountAsync()} ✨ NEW!");
-                Console.WriteLine($"   • Action Logs: {await context.ActionLogs.CountAsync()} ✨ NEW!");
+                Console.WriteLine($"   • Slots: {await context.Slots.CountAsync()}");
+                Console.WriteLine($"   • Attendances: {await context.Attendances.CountAsync()}");
+                Console.WriteLine($"   • Grade Components: {await context.GradeComponents.CountAsync()}");
+                Console.WriteLine($"   • Grades: {await context.Grades.CountAsync()}");
+                Console.WriteLine($"   • Certificate Templates: {await context.CertificateTemplates.CountAsync()}");
+                Console.WriteLine($"   • Credentials: {await context.Credentials.CountAsync()}");
+                Console.WriteLine($"   • Student Roadmaps: {await context.StudentRoadmaps.CountAsync()}");
+                Console.WriteLine($"   • Refresh Tokens: {await context.RefreshTokens.CountAsync()}");
+                Console.WriteLine($"   • OTPs: {await context.Otps.CountAsync()}");
+                Console.WriteLine($"   • Action Logs: {await context.ActionLogs.CountAsync()}");
                 Console.WriteLine("==============================================");
                 Console.WriteLine();
-                Console.WriteLine("🎯 KEY ACHIEVEMENTS:");
-                Console.WriteLine("   ✅ ALL 25 DATABASE TABLES SEEDED");
-                Console.WriteLine("   ✅ Modular seeders - easy to maintain");
-                Console.WriteLine("   ✅ SubjectOffering pattern - multi-semester support");
-                Console.WriteLine("   ✅ No data duplication - normalized design");
-                Console.WriteLine("   ✅ Complete test data for ALL APIs and features");
-                Console.WriteLine("   ✅ Realistic scenarios: attendance, grades, credentials, roadmaps");
-                Console.WriteLine("   ✅ Authorization: Role-based permissions");
-                Console.WriteLine("   ✅ Security: OTP and refresh token flows");
-                Console.WriteLine("   ✅ Audit trail: Complete action logging");
-                Console.WriteLine("   ✅ Edge cases: revoked credentials, substitute teachers, expired tokens");
+                Console.WriteLine("Key highlights:");
+                Console.WriteLine("   • All 25 database tables seeded");
+                Console.WriteLine("   • Modular seeders for easy maintenance");
+                Console.WriteLine("   • SubjectOffering pattern enables multi-semester support");
+                Console.WriteLine("   • No data duplication thanks to normalized design");
+                Console.WriteLine("   • Comprehensive test data covering attendance, grades, credentials, roadmaps");
+                Console.WriteLine("   • Role-based permissions and security flows");
+                Console.WriteLine("   • OTP/refresh token flows and audit trail coverage");
+                Console.WriteLine("   • Edge cases like revoked credentials and substitute teachers included");
                 Console.WriteLine("==============================================");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("==============================================");
-                Console.WriteLine($"❌ ERROR during seeding: {ex.Message}");
+                Console.WriteLine($"Error during seeding: {ex.Message}");
                 Console.WriteLine($"   Stack trace: {ex.StackTrace}");
                 Console.WriteLine("==============================================");
                 throw;

@@ -17,8 +17,8 @@ namespace Fap.Domain.DTOs.Enrollment
         public bool Success { get; set; }
         public string Message { get; set; }
         public Guid? EnrollmentId { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new(); // ✅ NEW: Non-blocking warnings
+    public List<string> Errors { get; set; } = new();
+    public List<string> Warnings { get; set; } = new(); // Non-blocking warnings
     }
 
     /// Request to get paginated enrollments with filters

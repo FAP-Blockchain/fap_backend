@@ -30,8 +30,8 @@ namespace Fap.Api.Interfaces
         Task<CreateWalletResult> GetOrCreateWalletAsync(string? existingAddress, Guid? userId = null);
         
         /// <summary>
-        /// Get Account object for signing transactions (decrypts private key)
-        /// ?? INTERNAL USE ONLY - Never expose to API!
+    /// Get Account object for signing transactions (decrypts private key)
+    /// INTERNAL USE ONLY - never expose to API
         /// </summary>
         /// <param name="address">Wallet address</param>
         /// <returns>Nethereum Account object</returns>

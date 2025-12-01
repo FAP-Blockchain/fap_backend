@@ -1,4 +1,7 @@
-﻿using Fap.Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fap.Infrastructure.Data.Seed
@@ -19,32 +22,45 @@ namespace Fap.Infrastructure.Data.Seed
         public static readonly Guid CS101Id = Guid.Parse("10000000-0000-0000-0000-000000000007");
         public static readonly Guid CS201Id = Guid.Parse("10000000-0000-0000-0000-000000000008");
 
-        // SubjectOffering IDs (Semester-specific offerings)
-        public static readonly Guid SE101_Spring2024 = Guid.Parse("20000000-0000-0000-0000-000000000001");
-        public static readonly Guid SE101_Fall2024 = Guid.Parse("20000000-0000-0000-0000-000000000002");
-        public static readonly Guid SE102_Spring2024 = Guid.Parse("20000000-0000-0000-0000-000000000003");
-        public static readonly Guid SE102_Summer2024 = Guid.Parse("20000000-0000-0000-0000-000000000004");
-        public static readonly Guid DB201_Spring2024 = Guid.Parse("20000000-0000-0000-0000-000000000005");
-        public static readonly Guid DB201_Fall2024 = Guid.Parse("20000000-0000-0000-0000-000000000006");
-        public static readonly Guid WEB301_Summer2024 = Guid.Parse("20000000-0000-0000-0000-000000000007");
-        public static readonly Guid WEB301_Fall2024 = Guid.Parse("20000000-0000-0000-0000-000000000008");
-        public static readonly Guid MATH101_Spring2024 = Guid.Parse("20000000-0000-0000-0000-000000000009");
-        public static readonly Guid MATH201_Fall2024 = Guid.Parse("20000000-0000-0000-0000-00000000000a");
-        public static readonly Guid CS101_Spring2024 = Guid.Parse("20000000-0000-0000-0000-00000000000b");
-        public static readonly Guid CS201_Summer2024 = Guid.Parse("20000000-0000-0000-0000-00000000000c");
+    // SubjectOffering IDs (Semester-specific offerings)
+    public static readonly Guid SE101_Winter2025 = Guid.Parse("20000000-0000-0000-0000-000000000101");
+    public static readonly Guid SE101_Spring2026 = Guid.Parse("20000000-0000-0000-0000-000000000102");
+    public static readonly Guid SE101_Fall2026 = Guid.Parse("20000000-0000-0000-0000-000000000103");
+    public static readonly Guid SE102_Spring2026 = Guid.Parse("20000000-0000-0000-0000-000000000104");
+    public static readonly Guid SE102_Fall2026 = Guid.Parse("20000000-0000-0000-0000-000000000105");
+    public static readonly Guid DB201_Winter2025 = Guid.Parse("20000000-0000-0000-0000-000000000106");
+    public static readonly Guid DB201_Summer2026 = Guid.Parse("20000000-0000-0000-0000-000000000107");
+    public static readonly Guid WEB301_Summer2026 = Guid.Parse("20000000-0000-0000-0000-000000000108");
+    public static readonly Guid WEB301_Fall2026 = Guid.Parse("20000000-0000-0000-0000-000000000109");
+    public static readonly Guid MATH101_Winter2025 = Guid.Parse("20000000-0000-0000-0000-00000000010a");
+    public static readonly Guid MATH101_Spring2026 = Guid.Parse("20000000-0000-0000-0000-00000000010b");
+    public static readonly Guid MATH201_Fall2026 = Guid.Parse("20000000-0000-0000-0000-00000000010c");
+    public static readonly Guid CS101_Winter2025 = Guid.Parse("20000000-0000-0000-0000-00000000010d");
+    public static readonly Guid CS101_Spring2026 = Guid.Parse("20000000-0000-0000-0000-00000000010e");
+    public static readonly Guid CS201_Summer2026 = Guid.Parse("20000000-0000-0000-0000-00000000010f");
 
         public SubjectOfferingSeeder(FapDbContext context) : base(context) { }
 
         public override async Task SeedAsync()
         {
-            if (await _context.Subjects.AnyAsync())
+            var subjectsExist = await _context.Subjects.AnyAsync();
+            var offeringsExist = await _context.SubjectOfferings.AnyAsync();
+
+            if (subjectsExist && offeringsExist)
             {
-                Console.WriteLine("Subjects already exist. Skipping seeding...");
+                Console.WriteLine("Subjects and offerings already exist. Skipping seeding...");
                 return;
             }
 
-            await SeedSubjectsAsync();
-            await SeedSubjectOfferingsAsync();
+            if (!subjectsExist)
+            {
+                await SeedSubjectsAsync();
+            }
+
+            if (!offeringsExist)
+            {
+                await SeedSubjectOfferingsAsync();
+            }
         }
 
         private async Task SeedSubjectsAsync()
@@ -180,193 +196,69 @@ namespace Fap.Infrastructure.Data.Seed
 
         private async Task SeedSubjectOfferingsAsync()
         {
+            var semesters = await _context.Semesters.ToDictionaryAsync(s => s.Id);
+
             var offerings = new List<SubjectOffering>
             {
-                // ===== SE101: Spring 2024 & Fall 2024 =====
-                new SubjectOffering
-                {
-                    Id = SE101_Spring2024,
-                    SubjectId = SE101Id,
-                    SemesterId = SemesterSeeder.Spring2024Id,
-                    MaxClasses = 5,
-                    SemesterCapacity = 200,
-                    RegistrationStartDate = new DateTime(2023, 12, 1),
-                    RegistrationEndDate = new DateTime(2023, 12, 31),
-                    IsActive = true,
-                    Notes = "Popular course - high demand expected",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new SubjectOffering
-                {
-                    Id = SE101_Fall2024,
-                    SubjectId = SE101Id,
-                    SemesterId = SemesterSeeder.Fall2024Id,
-                    MaxClasses = 8,
-                    SemesterCapacity = 320,
-                    RegistrationStartDate = new DateTime(2024, 7, 1),
-                    RegistrationEndDate = new DateTime(2024, 8, 15),
-                    IsActive = true,
-                    Notes = "Expanded capacity for fall semester",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
+                CreateOffering(SE101_Winter2025, SE101Id, SemesterSeeder.Winter2025Id, semesters, maxClasses: 4, semesterCapacity: 160, notes: "Bridge run before Spring term"),
+                CreateOffering(SE101_Spring2026, SE101Id, SemesterSeeder.Spring2026Id, semesters, maxClasses: 6, semesterCapacity: 240, notes: "High demand for freshmen"),
+                CreateOffering(SE101_Fall2026, SE101Id, SemesterSeeder.Fall2026Id, semesters, maxClasses: 6, semesterCapacity: 240, notes: "Repeat offering for late entrants"),
 
-                // ===== SE102: Spring 2024 & Summer 2024 =====
-                new SubjectOffering
-                {
-                    Id = SE102_Spring2024,
-                    SubjectId = SE102Id,
-                    SemesterId = SemesterSeeder.Spring2024Id,
-                    MaxClasses = 3,
-                    SemesterCapacity = 120,
-                    RegistrationStartDate = new DateTime(2023, 12, 1),
-                    RegistrationEndDate = new DateTime(2023, 12, 31),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new SubjectOffering
-                {
-                    Id = SE102_Summer2024,
-                    SubjectId = SE102Id,
-                    SemesterId = SemesterSeeder.Summer2024Id,
-                    MaxClasses = 2,
-                    SemesterCapacity = 80,
-                    RegistrationStartDate = new DateTime(2024, 5, 1),
-                    RegistrationEndDate = new DateTime(2024, 5, 31),
-                    IsActive = true,
-                    Notes = "Intensive summer session",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
+                CreateOffering(SE102_Spring2026, SE102Id, SemesterSeeder.Spring2026Id, semesters, maxClasses: 3, semesterCapacity: 120),
+                CreateOffering(SE102_Fall2026, SE102Id, SemesterSeeder.Fall2026Id, semesters, maxClasses: 3, semesterCapacity: 120, notes: "Project-focused cohort"),
 
-                // ===== DB201: Spring 2024 & Fall 2024 =====
-                new SubjectOffering
-                {
-                    Id = DB201_Spring2024,
-                    SubjectId = DB201Id,
-                    SemesterId = SemesterSeeder.Spring2024Id,
-                    MaxClasses = 4,
-                    SemesterCapacity = 160,
-                    RegistrationStartDate = new DateTime(2023, 12, 1),
-                    RegistrationEndDate = new DateTime(2023, 12, 31),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new SubjectOffering
-                {
-                    Id = DB201_Fall2024,
-                    SubjectId = DB201Id,
-                    SemesterId = SemesterSeeder.Fall2024Id,
-                    MaxClasses = 6,
-                    SemesterCapacity = 240,
-                    RegistrationStartDate = new DateTime(2024, 7, 1),
-                    RegistrationEndDate = new DateTime(2024, 8, 15),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
+                CreateOffering(DB201_Winter2025, DB201Id, SemesterSeeder.Winter2025Id, semesters, maxClasses: 2, semesterCapacity: 80, notes: "Evening intensive"),
+                CreateOffering(DB201_Summer2026, DB201Id, SemesterSeeder.Summer2026Id, semesters, maxClasses: 4, semesterCapacity: 160),
 
-                // ===== WEB301: Summer 2024 & Fall 2024 =====
-                new SubjectOffering
-                {
-                    Id = WEB301_Summer2024,
-                    SubjectId = WEB301Id,
-                    SemesterId = SemesterSeeder.Summer2024Id,
-                    MaxClasses = 3,
-                    SemesterCapacity = 90,
-                    RegistrationStartDate = new DateTime(2024, 5, 1),
-                    RegistrationEndDate = new DateTime(2024, 5, 31),
-                    IsActive = true,
-                    Notes = "Hands-on web development bootcamp",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new SubjectOffering
-                {
-                    Id = WEB301_Fall2024,
-                    SubjectId = WEB301Id,
-                    SemesterId = SemesterSeeder.Fall2024Id,
-                    MaxClasses = 4,
-                    SemesterCapacity = 120,
-                    RegistrationStartDate = new DateTime(2024, 7, 1),
-                    RegistrationEndDate = new DateTime(2024, 8, 15),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
+                CreateOffering(WEB301_Summer2026, WEB301Id, SemesterSeeder.Summer2026Id, semesters, maxClasses: 3, semesterCapacity: 90, notes: "Bootcamp format"),
+                CreateOffering(WEB301_Fall2026, WEB301Id, SemesterSeeder.Fall2026Id, semesters, maxClasses: 2, semesterCapacity: 60, notes: "Capstone studio"),
 
-                // ===== MATH101: Spring 2024 =====
-                new SubjectOffering
-                {
-                    Id = MATH101_Spring2024,
-                    SubjectId = MATH101Id,
-                    SemesterId = SemesterSeeder.Spring2024Id,
-                    MaxClasses = 10,
-                    SemesterCapacity = 400,
-                    RegistrationStartDate = new DateTime(2023, 12, 1),
-                    RegistrationEndDate = new DateTime(2023, 12, 31),
-                    IsActive = true,
-                    Notes = "Foundation course - large capacity",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
+                CreateOffering(MATH101_Winter2025, MATH101Id, SemesterSeeder.Winter2025Id, semesters, maxClasses: 5, semesterCapacity: 200, notes: "Foundation course"),
+                CreateOffering(MATH101_Spring2026, MATH101Id, SemesterSeeder.Spring2026Id, semesters, maxClasses: 6, semesterCapacity: 240),
+                CreateOffering(MATH201_Fall2026, MATH201Id, SemesterSeeder.Fall2026Id, semesters, maxClasses: 4, semesterCapacity: 160),
 
-                // ===== MATH201: Fall 2024 =====
-                new SubjectOffering
-                {
-                    Id = MATH201_Fall2024,
-                    SubjectId = MATH201Id,
-                    SemesterId = SemesterSeeder.Fall2024Id,
-                    MaxClasses = 5,
-                    SemesterCapacity = 200,
-                    RegistrationStartDate = new DateTime(2024, 7, 1),
-                    RegistrationEndDate = new DateTime(2024, 8, 15),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-
-                // ===== CS101: Spring 2024 =====
-                new SubjectOffering
-                {
-                    Id = CS101_Spring2024,
-                    SubjectId = CS101Id,
-                    SemesterId = SemesterSeeder.Spring2024Id,
-                    MaxClasses = 8,
-                    SemesterCapacity = 320,
-                    RegistrationStartDate = new DateTime(2023, 12, 1),
-                    RegistrationEndDate = new DateTime(2023, 12, 31),
-                    IsActive = true,
-                    Notes = "Intro programming - high enrollment",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-
-                // ===== CS201: Summer 2024 =====
-                new SubjectOffering
-                {
-                    Id = CS201_Summer2024,
-                    SubjectId = CS201Id,
-                    SemesterId = SemesterSeeder.Summer2024Id,
-                    MaxClasses = 3,
-                    SemesterCapacity = 120,
-                    RegistrationStartDate = new DateTime(2024, 5, 1),
-                    RegistrationEndDate = new DateTime(2024, 5, 31),
-                    IsActive = true,
-                    Notes = "Accelerated DSA course",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                }
+                CreateOffering(CS101_Winter2025, CS101Id, SemesterSeeder.Winter2025Id, semesters, maxClasses: 6, semesterCapacity: 240),
+                CreateOffering(CS101_Spring2026, CS101Id, SemesterSeeder.Spring2026Id, semesters, maxClasses: 6, semesterCapacity: 240),
+                CreateOffering(CS201_Summer2026, CS201Id, SemesterSeeder.Summer2026Id, semesters, maxClasses: 3, semesterCapacity: 120, notes: "Accelerated DSA cohort")
             };
 
             await _context.SubjectOfferings.AddRangeAsync(offerings);
-            await SaveAsync("SubjectOfferings (Semester-Specific)");
+            await SaveAsync("SubjectOfferings");
 
-            Console.WriteLine($"📊 Created {offerings.Count} subject offerings across multiple semesters");
-            Console.WriteLine("Subjects can now be offered in different semesters.");
+            Console.WriteLine($"Created {offerings.Count} subject offerings across {offerings.Select(o => o.SemesterId).Distinct().Count()} semesters");
+        }
+
+        private static SubjectOffering CreateOffering(
+            Guid offeringId,
+            Guid subjectId,
+            Guid semesterId,
+            IReadOnlyDictionary<Guid, Semester> semesters,
+            int maxClasses,
+            int semesterCapacity,
+            string? notes = null)
+        {
+            if (!semesters.TryGetValue(semesterId, out var semester))
+            {
+                throw new InvalidOperationException($"Semester {semesterId} has not been seeded yet.");
+            }
+
+            var registrationStart = semester.StartDate.AddDays(-35);
+            var registrationEnd = semester.StartDate.AddDays(7);
+
+            return new SubjectOffering
+            {
+                Id = offeringId,
+                SubjectId = subjectId,
+                SemesterId = semesterId,
+                MaxClasses = maxClasses,
+                SemesterCapacity = semesterCapacity,
+                RegistrationStartDate = registrationStart,
+                RegistrationEndDate = registrationEnd,
+                IsActive = true,
+                Notes = notes,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
         }
     }
 }

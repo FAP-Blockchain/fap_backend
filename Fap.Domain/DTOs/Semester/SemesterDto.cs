@@ -25,7 +25,7 @@ namespace Fap.Domain.DTOs.Semester
         public int TotalClasses { get; set; }
         public int TotalStudentsEnrolled { get; set; }
 
-        // ✅ CHANGED: Use SubjectOfferings instead of Subjects
+        // Use SubjectOfferings instead of Subjects
         public List<SubjectOfferingDto> SubjectOfferings { get; set; } = new();
     }
 }

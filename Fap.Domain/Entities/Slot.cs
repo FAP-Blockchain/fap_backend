@@ -23,20 +23,16 @@ namespace Fap.Domain.Entities
         [ForeignKey(nameof(TimeSlotId))]
         public TimeSlot TimeSlot { get; set; }
 
-        // 🆕 Giáo viên dạy thay (nếu có)
         public Guid? SubstituteTeacherId { get; set; }
         [ForeignKey(nameof(SubstituteTeacherId))]
         public Teacher SubstituteTeacher { get; set; }
 
-        // 🆕 Lý do thay đổi giáo viên
         [MaxLength(500)]
         public string? SubstitutionReason { get; set; }
 
-        // 🆕 Trạng thái slot
         [MaxLength(20)]
-        public string Status { get; set; } = "Scheduled"; // "Scheduled", "Completed", "Cancelled"
+    public string Status { get; set; } = "Scheduled"; // Scheduled, Completed, Cancelled
 
-        // 🆕 Ghi chú
         [MaxLength(500)]
         public string? Notes { get; set; }
 

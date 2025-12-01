@@ -11,7 +11,7 @@ namespace Fap.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]  // ? Ch? Admin m?i có quy?n xem permissions
+    [Authorize(Roles = "Admin")]  // Only administrators can access permission management
     public class PermissionsController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -38,7 +38,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting permissions: {ex.Message}");
+                _logger.LogError($"Error getting permissions: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while retrieving permissions" });
             }
         }
@@ -68,7 +68,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting permissions {roleId}: {ex.Message}");
+                _logger.LogError($"Error getting permissions {roleId}: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while retrieving permissions" });
             }
         }

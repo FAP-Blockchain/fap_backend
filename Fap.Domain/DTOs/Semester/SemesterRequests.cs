@@ -25,7 +25,7 @@ namespace Fap.Domain.DTOs.Semester
         [Required(ErrorMessage = "End date is required")]
         public DateTime EndDate { get; set; }
 
-        // ✅ Optional: Default settings for auto-created SubjectOfferings
+    // Default settings for auto-created SubjectOfferings
         public int DefaultMaxClassesPerSubject { get; set; } = 10;
         public int DefaultSemesterCapacityPerSubject { get; set; } = 400;
         public int RegistrationStartDaysBeforeSemester { get; set; } = 14; // 2 weeks before

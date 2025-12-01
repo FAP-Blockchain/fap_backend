@@ -67,14 +67,14 @@ namespace Fap.Api.Services
 
         public async Task<SlotDto> CreateSlotAsync(CreateSlotRequest request)
         {
-            // Validate class exists
+            // Validate class
             var classEntity = await _unitOfWork.Classes.GetByIdAsync(request.ClassId);
             if (classEntity == null)
             {
                 throw new InvalidOperationException($"Class with ID {request.ClassId} not found");
             }
 
-            // Validate timeSlot if provided
+            // Validate timeSlot
             if (request.TimeSlotId.HasValue)
             {
                 var timeSlots = await _unitOfWork.TimeSlots.FindAsync(ts => ts.Id == request.TimeSlotId.Value);
@@ -84,7 +84,7 @@ namespace Fap.Api.Services
                 }
             }
 
-            // Validate substitute teacher if provided
+            // Validate substitute teacher
             if (request.SubstituteTeacherId.HasValue)
             {
                 var teacher = await _unitOfWork.Teachers.GetByIdAsync(request.SubstituteTeacherId.Value);
@@ -93,14 +93,14 @@ namespace Fap.Api.Services
                     throw new InvalidOperationException($"Substitute teacher with ID {request.SubstituteTeacherId} not found");
                 }
 
-                // Require substitution reason when substitute teacher is assigned
+                // Require substitution reason
                 if (string.IsNullOrWhiteSpace(request.SubstitutionReason))
                 {
                     throw new InvalidOperationException("Substitution reason is required when assigning a substitute teacher");
                 }
             }
 
-            // Check for overlapping slots
+            // Check overlap
             if (await _unitOfWork.Slots.HasOverlappingSlotAsync(request.ClassId, request.Date, request.TimeSlotId))
             {
                 throw new InvalidOperationException("A slot already exists for this class at the same date and time");
@@ -135,13 +135,13 @@ namespace Fap.Api.Services
             var slot = await _unitOfWork.Slots.GetByIdWithDetailsAsync(id);
             if (slot == null) return null;
 
-            // Validation: Cannot update a slot that has already taken place
+            // Validate past slot
             if (slot.Date < DateTime.UtcNow.Date)
             {
                 throw new InvalidOperationException("Cannot update a slot that has already taken place.");
             }
 
-            // Check if slot has attendance - if yes, only allow status and notes update
+            // Check attendance
             if (slot.Attendances?.Any() == true)
             {
                 if (slot.Date != request.Date || slot.TimeSlotId != request.TimeSlotId)
@@ -150,7 +150,7 @@ namespace Fap.Api.Services
                 }
             }
 
-            // Validate timeSlot if changed
+            // Validate timeSlot
             if (request.TimeSlotId != slot.TimeSlotId && request.TimeSlotId.HasValue)
             {
                 var timeSlots = await _unitOfWork.TimeSlots.FindAsync(ts => ts.Id == request.TimeSlotId.Value);
@@ -160,7 +160,7 @@ namespace Fap.Api.Services
                 }
             }
 
-            // Validate substitute teacher if changed
+            // Validate substitute teacher
             if (request.SubstituteTeacherId.HasValue)
             {
                 var teacher = await _unitOfWork.Teachers.GetByIdAsync(request.SubstituteTeacherId.Value);
@@ -175,7 +175,7 @@ namespace Fap.Api.Services
                 }
             }
 
-            // Check for overlapping if date or time changed
+            // Check overlap
             if (slot.Date != request.Date || slot.TimeSlotId != request.TimeSlotId)
             {
                 if (await _unitOfWork.Slots.HasOverlappingSlotAsync(slot.ClassId, request.Date, request.TimeSlotId, id))
@@ -206,13 +206,13 @@ namespace Fap.Api.Services
             var slot = await _unitOfWork.Slots.GetByIdWithDetailsAsync(id);
             if (slot == null) return false;
 
-            // Validation: Cannot delete a past slot
+            // Validate past slot
             if (slot.Date < DateTime.UtcNow.Date)
             {
                 throw new InvalidOperationException("Cannot delete a past slot.");
             }
 
-            // Cannot delete slot with attendance records
+            // Check attendance
             if (slot.Attendances?.Any() == true)
             {
                 throw new InvalidOperationException("Cannot delete a slot that has attendance records. Consider cancelling it instead.");
@@ -312,7 +312,7 @@ namespace Fap.Api.Services
 
             var query = slots.AsQueryable();
 
-            // Apply additional filters
+            // Apply filters
             if (filter.FromDate.HasValue && !filter.ToDate.HasValue)
             {
                 query = query.Where(s => s.Date >= filter.FromDate.Value);
@@ -403,7 +403,7 @@ namespace Fap.Api.Services
             var slot = await _unitOfWork.Slots.GetByIdWithDetailsAsync(slotId);
             if (slot == null) return false;
 
-            // Teacher can modify if they are the class teacher or substitute teacher
+            // Check permission
             return slot.Class.TeacherUserId == teacherUserId ||
                    (slot.SubstituteTeacherId.HasValue && slot.SubstituteTeacherId.Value == teacherUserId);
         }
@@ -413,7 +413,7 @@ namespace Fap.Api.Services
             var slot = await _unitOfWork.Slots.GetByIdWithDetailsAsync(slotId);
             if (slot == null) return false;
 
-            // Cannot delete if has attendance
+            // Check attendance
             return slot.Attendances == null || !slot.Attendances.Any();
         }
 

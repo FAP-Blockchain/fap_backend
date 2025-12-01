@@ -58,7 +58,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting classes: {ex.Message}");
+                _logger.LogError($"Error getting classes: {ex.Message}");
                 throw;
             }
         }
@@ -76,7 +76,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting class {id}: {ex.Message}");
+                _logger.LogError($"Error getting class {id}: {ex.Message}");
                 throw;
             }
         }
@@ -100,7 +100,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ FIXED: 2. Validate SubjectOffering exists (not Subject directly)
+                // 2. Validate SubjectOffering exists (not Subject directly)
                 var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(request.SubjectOfferingId);
                 if (subjectOffering == null)
                 {
@@ -118,7 +118,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ FIXED: 4. Create new Class with SubjectOfferingId
+                // 4. Create new class with SubjectOfferingId
                 var newClass = new Domain.Entities.Class
                 {
                     Id = Guid.NewGuid(),
@@ -177,7 +177,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error creating class: {ex.Message}");
+                _logger.LogError($"Error creating class: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Class creation failed";
                 return response;
@@ -213,7 +213,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ FIXED: 3. Validate SubjectOffering exists (not Subject directly)
+                // 3. Validate SubjectOffering exists (not Subject directly)
                 var subjectOffering = await _uow.SubjectOfferings.GetByIdAsync(request.SubjectOfferingId);
                 if (subjectOffering == null)
                 {
@@ -231,7 +231,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ FIXED: 5. Update class with SubjectOfferingId
+                // 5. Update class with SubjectOfferingId
                 existingClass.ClassCode = request.ClassCode;
                 existingClass.SubjectOfferingId = request.SubjectOfferingId;
                 existingClass.TeacherUserId = request.TeacherId;
@@ -285,7 +285,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error updating class {id}: {ex.Message}");
+                _logger.LogError($"Error updating class {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Class update failed";
                 return response;
@@ -317,13 +317,13 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "Class deleted successfully";
-                _logger.LogInformation($"? Class {id} deleted successfully");
+                _logger.LogInformation($"Class {id} deleted successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error deleting class {id}: {ex.Message}");
+                _logger.LogError($"Error deleting class {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Class deletion failed";
                 return response;
@@ -335,7 +335,7 @@ namespace Fap.Api.Services
         {
             try
             {
-                // ✅ FIX: Get class members directly from ClassMembers table (fresh data)
+                // Get class members directly from ClassMembers table (fresh data)
                 var classMembers = await _uow.ClassMembers.GetClassMembersWithDetailsAsync(id);
 
                 // Apply filtering
@@ -370,7 +370,7 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error getting class roster for {id}: {ex.Message}");
+                _logger.LogError($"Error getting class roster for {id}: {ex.Message}");
                 throw;
             }
         }
@@ -391,7 +391,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ✅ Get subject and semester from SubjectOffering
+                // Get subject and semester from SubjectOffering
                 var subjectOffering = @class.SubjectOffering;
                 if (subjectOffering == null)
                 {
@@ -420,7 +420,7 @@ namespace Fap.Api.Services
 
                 foreach (var studentId in request.StudentIds)
                 {
-                    // ✅ Check if student exists
+                    // Check if student exists
                     var student = await _uow.Students.GetByIdAsync(studentId);
                     if (student == null)
                     {
@@ -429,7 +429,7 @@ namespace Fap.Api.Services
                         continue;
                     }
 
-                    // ✅ Check if student is eligible for this subject in this semester
+                    // Check if student is eligible for this subject in this semester
                     var eligibility = await _studentRoadmapService.CheckCurriculumSubjectEligibilityAsync(studentId, subjectId);
 
                     if (!eligibility.IsEligible)
@@ -445,7 +445,7 @@ namespace Fap.Api.Services
                         continue;
                     }
 
-                    // ✅ Check if student is already in class
+                    // Check if student is already in class
                     var isAlreadyInClass = await _uow.ClassMembers.IsStudentInClassAsync(classId, studentId);
                     if (isAlreadyInClass)
                     {
@@ -454,7 +454,7 @@ namespace Fap.Api.Services
                         continue;
                     }
 
-                    // ✅ Check for schedule conflicts with existing slots
+                    // Check for schedule conflicts with existing slots
                     var classSlots = @class.Slots ?? new List<Slot>();
                     var slotConflicts = new List<string>();
 
@@ -478,7 +478,7 @@ namespace Fap.Api.Services
                         continue;
                     }
 
-                    // ✅ Add student to class via ClassMembers
+                    // Add student to class via ClassMembers
                     var classMember = new Domain.Entities.ClassMember
                     {
                         Id = Guid.NewGuid(),
@@ -489,7 +489,7 @@ namespace Fap.Api.Services
 
                     await _uow.ClassMembers.AddAsync(classMember);
 
-                    // ✅✅ NEW: Auto-create grade records with null scores for all grade components
+                    // Auto-create grade records with null scores for all grade components
                     var gradeComponents = await _uow.GradeComponents.FindAsync(gc => gc.SubjectId == subjectId);
                     var gradesCreatedCount = 0;
                     
@@ -506,7 +506,7 @@ namespace Fap.Api.Services
                                 StudentId = studentId,
                                 SubjectId = subjectId,
                                 GradeComponentId = component.Id,
-                                Score = null,  // ✅ Initialize with null
+                                Score = null,
                                 LetterGrade = null,
                                 UpdatedAt = DateTime.UtcNow
                             };
@@ -544,13 +544,13 @@ namespace Fap.Api.Services
                     ? $"Successfully assigned {assignedStudents.Count} student(s) to class {@class.ClassCode}. {failedCount} failed."
                     : "No students were assigned";
 
-                _logger.LogInformation($"✅ Assigned {assignedStudents.Count} students to class {classId}. {failedCount} failed eligibility check.");
+                _logger.LogInformation($"Assigned {assignedStudents.Count} students to class {classId}. {failedCount} failed eligibility check.");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error assigning students to class {classId}: {ex.Message}");
+                _logger.LogError($"Error assigning students to class {classId}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Assignment failed";
                 return response;
@@ -573,7 +573,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 2. ✅ Check if student is in class using ClassMembers
+                // 2. Check if student is in class using ClassMembers
                 var isInClass = await _uow.ClassMembers.IsStudentInClassAsync(classId, studentId);
                 if (!isInClass)
                 {
@@ -582,20 +582,20 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 3. ✅ Remove student from class via ClassMembers
+                // 3. Remove student from class via ClassMembers
                 await _uow.ClassMembers.RemoveStudentFromClassAsync(classId, studentId);
                 await _uow.SaveChangesAsync();
 
                 response.Success = true;
                 response.Message = $"Successfully removed student from class {@class.ClassCode}";
 
-                _logger.LogInformation($"✅ Removed student {studentId} from class {classId}");
+                _logger.LogInformation($"Removed student {studentId} from class {classId}");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error removing student {studentId} from class {classId}: {ex.Message}");
+                _logger.LogError($"Error removing student {studentId} from class {classId}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Removal failed";
                 return response;

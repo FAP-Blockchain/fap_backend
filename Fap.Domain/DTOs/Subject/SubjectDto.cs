@@ -14,8 +14,8 @@
         public string? Department { get; set; }
         public string? Prerequisites { get; set; }
 
-        // ✅ CHANGED: Show total offerings instead of being tied to one semester
-        public int TotalOfferings { get; set; }
+    // Total offerings across semesters
+    public int TotalOfferings { get; set; }
     }
 
     /// <summary>
@@ -32,8 +32,8 @@
         public string? Department { get; set; }
         public string? Prerequisites { get; set; }
 
-        // ✅ NEW: Include all offerings (subject can be in multiple semesters)
-        public List<SubjectOfferingDto> Offerings { get; set; } = new();
+    // Include all offerings (subject can be in multiple semesters)
+    public List<SubjectOfferingDto> Offerings { get; set; } = new();
 
         // Statistics across all offerings
         public int TotalOfferings { get; set; }

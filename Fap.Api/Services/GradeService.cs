@@ -70,7 +70,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // ? Auto-calculate letter grade based on score
+                // Auto-calculate letter grade based on score
                 var letterGrade = GradeHelper.CalculateLetterGrade(request.Score);
 
                 var newGrade = new Grade
@@ -80,7 +80,7 @@ namespace Fap.Api.Services
                     SubjectId = request.SubjectId,
                     GradeComponentId = request.GradeComponentId,
                     Score = request.Score,
-                    LetterGrade = letterGrade,  // ? Always auto-calculated
+                    LetterGrade = letterGrade,
                     UpdatedAt = DateTime.UtcNow
                 };
 
@@ -420,8 +420,8 @@ namespace Fap.Api.Services
                 {
                     ClassId = classEntity.Id,
                     ClassCode = classEntity.ClassCode,
-                    SubjectCode = classEntity.SubjectOffering.Subject.SubjectCode, // ? FIXED
-                    SubjectName = classEntity.SubjectOffering.Subject.SubjectName, // ? FIXED
+                    SubjectCode = classEntity.SubjectOffering.Subject.SubjectCode,
+                    SubjectName = classEntity.SubjectOffering.Subject.SubjectName,
                     TeacherName = classEntity.Teacher?.User?.FullName ?? "N/A",
                     Students = new List<StudentGradeInClassDto>()
                 };
@@ -517,69 +517,65 @@ namespace Fap.Api.Services
                 // Get student's grades
                 var grades = await _uow.Grades.GetGradesByStudentIdAsync(studentId);
 
-                // ?? TODO: Subject no longer has SemesterId - need to filter through Class/Enrollment
-  // Filter by semester if requested
-   if (request.SemesterId.HasValue)
-    {
-   // ? DISABLED: Subject.SemesterId no longer exists
-    // Need to implement filtering through: Grade ? Student ? Enrollment ? Class ? SubjectOffering ? Semester
-_logger.LogWarning("Semester filtering for grades not yet implemented with new Subject model");
-   // grades = grades.Where(g => g.Subject.SemesterId == request.SemesterId.Value).ToList();
-  }
+                // TODO: subject no longer has SemesterId - need to filter through Class/Enrollment
+                if (request.SemesterId.HasValue)
+                {
+                    // Need to implement filtering through: Grade -> Student -> Enrollment -> Class -> SubjectOffering -> Semester
+                    _logger.LogWarning("Semester filtering for grades not yet implemented with new Subject model");
+                    // grades = grades.Where(g => g.Subject.SemesterId == request.SemesterId.Value).ToList();
+                }
 
-   // Filter by subject if requested
-  if (request.SubjectId.HasValue)
-    {
-      grades = grades.Where(g => g.SubjectId == request.SubjectId.Value).ToList();
- }
+                if (request.SubjectId.HasValue)
+                {
+                    grades = grades.Where(g => g.SubjectId == request.SubjectId.Value).ToList();
+                }
 
-   // Group grades by subject
-    var subjectGrades = grades
-.GroupBy(g => g.SubjectId)
-.Select(group =>
-   {
-    var firstGrade = group.First();
-  var componentGrades = group.Select(g => new ComponentGradeDto
-      {
-   GradeId = g.Id,
-  GradeComponentId = g.GradeComponentId,
-   ComponentName = g.GradeComponent.Name,
-   ComponentWeight = g.GradeComponent.WeightPercent,
-    Score = g.Score,
-      LetterGrade = g.LetterGrade ?? string.Empty
-     }).ToList();
+                var subjectGrades = grades
+                    .GroupBy(g => g.SubjectId)
+                    .Select(group =>
+                    {
+                        var firstGrade = group.First();
+                        var componentGrades = group.Select(g => new ComponentGradeDto
+                        {
+                            GradeId = g.Id,
+                            GradeComponentId = g.GradeComponentId,
+                            ComponentName = g.GradeComponent.Name,
+                            ComponentWeight = g.GradeComponent.WeightPercent,
+                            Score = g.Score,
+                            LetterGrade = g.LetterGrade ?? string.Empty
+                        }).ToList();
 
-  // Calculate average for subject
-decimal totalWeightedScore = 0;
- int totalWeight = 0;
+                        decimal totalWeightedScore = 0;
+                        int totalWeight = 0;
 
-foreach (var cg in componentGrades)
-{
-      if (cg.Score.HasValue)
-   {
-    totalWeightedScore += cg.Score.Value * cg.ComponentWeight;
-   totalWeight += cg.ComponentWeight;
- }
-     }
+                        foreach (var componentGrade in componentGrades)
+                        {
+                            if (componentGrade.Score.HasValue)
+                            {
+                                totalWeightedScore += componentGrade.Score.Value * componentGrade.ComponentWeight;
+                                totalWeight += componentGrade.ComponentWeight;
+                            }
+                        }
 
-  decimal? averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : null;
- string? finalLetterGrade = averageScore.HasValue ? GradeHelper.CalculateLetterGrade(averageScore.Value) : null;
+                        decimal? averageScore = totalWeight > 0 ? totalWeightedScore / totalWeight : null;
+                        string? finalLetterGrade = averageScore.HasValue
+                            ? GradeHelper.CalculateLetterGrade(averageScore.Value)
+                            : null;
 
-    return new SubjectGradeDto
-   {
-  SubjectId = firstGrade.SubjectId,
-SubjectCode = firstGrade.Subject.SubjectCode,
-      SubjectName = firstGrade.Subject.SubjectName,
-   Credits = firstGrade.Subject.Credits,
- // ?? TODO: Cannot get SemesterName directly from Subject anymore
-      // Need to get from: Grade ? (determine which class/enrollment) ? SubjectOffering ? Semester
-   SemesterName = "N/A", // ? DISABLED: firstGrade.Subject.Semester.Name
-  ComponentGrades = componentGrades,
-    AverageScore = averageScore,
-   FinalLetterGrade = finalLetterGrade ?? string.Empty
-      };
-   })
-  .ToList();
+                        return new SubjectGradeDto
+                        {
+                            SubjectId = firstGrade.SubjectId,
+                            SubjectCode = firstGrade.Subject.SubjectCode,
+                            SubjectName = firstGrade.Subject.SubjectName,
+                            Credits = firstGrade.Subject.Credits,
+                            // TODO: determine SemesterName via Grade -> Enrollment -> Class -> SubjectOffering -> Semester
+                            SemesterName = "N/A",
+                            ComponentGrades = componentGrades,
+                            AverageScore = averageScore,
+                            FinalLetterGrade = finalLetterGrade ?? string.Empty
+                        };
+                    })
+                    .ToList();
 
   // Sort subjects
                 subjectGrades = request.SortOrder?.ToLower() == "desc"

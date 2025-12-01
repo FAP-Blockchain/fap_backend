@@ -18,14 +18,11 @@ namespace Fap.Domain.Entities
         [Required, MaxLength(30)]
         public string StudentCode { get; set; } // Mã sinh viên
 
-        public DateTime EnrollmentDate { get; set; } // Ngày nhập học
-        public decimal GPA { get; set; }  // Điểm trung bình
+    public DateTime EnrollmentDate { get; set; } // Ngày nhập học
+    public decimal GPA { get; set; }  // Điểm trung bình
 
-        // 🆕 Trạng thái tốt nghiệp
-        public bool IsGraduated { get; set; } = false;
-        
-        // 🆕 Ngày tốt nghiệp
-        public DateTime? GraduationDate { get; set; }
+    public bool IsGraduated { get; set; } = false;
+    public DateTime? GraduationDate { get; set; }
 
         // Navigation
         public User User { get; set; }  // Quan hệ với User
@@ -38,6 +35,6 @@ namespace Fap.Domain.Entities
 
         public virtual ICollection<ClassMember> ClassMembers { get; set; }
         public virtual ICollection<Credential> Credentials { get; set; }
-        public virtual ICollection<StudentRoadmap> Roadmaps { get; set; } // 🆕
+    public virtual ICollection<StudentRoadmap> Roadmaps { get; set; }
     }
 }

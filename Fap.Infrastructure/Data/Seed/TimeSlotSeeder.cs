@@ -1,4 +1,5 @@
-﻿using Fap.Domain.Entities;
+﻿using System;
+using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fap.Infrastructure.Data.Seed
@@ -11,6 +12,8 @@ namespace Fap.Infrastructure.Data.Seed
         public static readonly Guid Slot4Id = Guid.Parse("30000000-0000-0000-0000-000000000004");
         public static readonly Guid Slot5Id = Guid.Parse("30000000-0000-0000-0000-000000000005");
         public static readonly Guid Slot6Id = Guid.Parse("30000000-0000-0000-0000-000000000006");
+    public static readonly Guid Slot7Id = Guid.Parse("30000000-0000-0000-0000-000000000007");
+    public static readonly Guid Slot8Id = Guid.Parse("30000000-0000-0000-0000-000000000008");
 
         public TimeSlotSeeder(FapDbContext context) : base(context) { }
 
@@ -65,6 +68,20 @@ namespace Fap.Infrastructure.Data.Seed
                     Name = "Slot 6",
                     StartTime = new TimeSpan(16, 10, 0),
                     EndTime = new TimeSpan(17, 40, 0)
+                },
+                new TimeSlot
+                {
+                    Id = Slot7Id,
+                    Name = "Slot 7",
+                    StartTime = new TimeSpan(18, 0, 0),
+                    EndTime = new TimeSpan(19, 30, 0)
+                },
+                new TimeSlot
+                {
+                    Id = Slot8Id,
+                    Name = "Slot 8",
+                    StartTime = new TimeSpan(19, 40, 0),
+                    EndTime = new TimeSpan(21, 10, 0)
                 }
             };
 

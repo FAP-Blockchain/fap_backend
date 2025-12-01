@@ -67,12 +67,12 @@ namespace Fap.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error getting user {id}: {ex.Message}");
+                _logger.LogError($"Error getting user {id}: {ex.Message}");
                 throw;
             }
         }
 
-        // ✅ NEW: UPDATE USER
+    // Update user details
         public async Task<UpdateUserResponse> UpdateUserAsync(Guid id, UpdateUserRequest request)
         {
             var response = new UpdateUserResponse
@@ -175,7 +175,6 @@ namespace Fap.Api.Services
                         user.Teacher.Specialization = request.Specialization;
                     }
 
-                    // ✅ FIXED: Update PhoneNumber on User entity, not Teacher
                     if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
                     {
                         user.PhoneNumber = request.PhoneNumber;
@@ -188,20 +187,20 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "User updated successfully";
-                _logger.LogInformation($"✅ User {id} updated successfully");
+                _logger.LogInformation($"User {id} updated successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error updating user {id}: {ex.Message}");
+                _logger.LogError($"Error updating user {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Update failed";
                 return response;
             }
         }
 
-        // ✅ NEW: ACTIVATE USER
+    // Activate user
         public async Task<UpdateUserResponse> ActivateUserAsync(Guid id)
         {
             var response = new UpdateUserResponse
@@ -232,20 +231,20 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "User activated successfully";
-                _logger.LogInformation($"✅ User {id} activated successfully");
+                _logger.LogInformation($"User {id} activated successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error activating user {id}: {ex.Message}");
+                _logger.LogError($"Error activating user {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Activation failed";
                 return response;
             }
         }
 
-        // ✅ NEW: DEACTIVATE USER
+    // Deactivate user
         public async Task<UpdateUserResponse> DeactivateUserAsync(Guid id)
         {
             var response = new UpdateUserResponse
@@ -276,13 +275,13 @@ namespace Fap.Api.Services
 
                 response.Success = true;
                 response.Message = "User deactivated successfully";
-                _logger.LogInformation($"✅ User {id} deactivated successfully");
+                _logger.LogInformation($"User {id} deactivated successfully");
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error deactivating user {id}: {ex.Message}");
+                _logger.LogError($"Error deactivating user {id}: {ex.Message}");
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Deactivation failed";
                 return response;

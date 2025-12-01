@@ -40,7 +40,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting subjects: {ex.Message}");
+                _logger.LogError($"Error getting subjects: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while retrieving subjects" });
             }
         }
@@ -62,7 +62,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error getting subject {id}: {ex.Message}");
+                _logger.LogError($"Error getting subject {id}: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while retrieving subject" });
             }
         }
@@ -85,14 +85,13 @@ namespace Fap.Api.Controllers
                     return BadRequest(new { message });
 
                 return CreatedAtAction(
-            nameof(GetSubjectById),
-                new { id = subjectId },
-                  new { message, subjectId }
-                     );
+                    nameof(GetSubjectById),
+                    new { id = subjectId },
+                    new { message, subjectId });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error creating subject: {ex.Message}");
+                _logger.LogError($"Error creating subject: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while creating subject" });
             }
         }
@@ -118,7 +117,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error updating subject {id}: {ex.Message}");
+                _logger.LogError($"Error updating subject {id}: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while updating subject" });
             }
         }
@@ -141,7 +140,7 @@ namespace Fap.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"? Error deleting subject {id}: {ex.Message}");
+                _logger.LogError($"Error deleting subject {id}: {ex.Message}");
                 return StatusCode(500, new { message = "An error occurred while deleting subject" });
             }
         }
