@@ -491,7 +491,7 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
                 
                 // Generate shareable URL
                 var frontendBaseUrl = _frontendSettings.BaseUrl;
-                var shareableUrl = $"{frontendBaseUrl}/public-portal/certificates/verify/{credentialNumber}";
+                var shareableUrl = $"{frontendBaseUrl}//certificates/verify/{credentialNumber}";
 
                 var credential = new Credential
                 {
