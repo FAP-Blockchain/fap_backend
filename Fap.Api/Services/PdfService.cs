@@ -4,8 +4,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using QRCoder;
-using System.Drawing;
-using System.Drawing.Imaging;
 
 namespace Fap.Api.Services
 {
@@ -206,12 +204,8 @@ namespace Fap.Api.Services
             {
                 using var qrGenerator = new QRCodeGenerator();
                 using var qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
-                using var qrCode = new QRCode(qrCodeData);
-                using var bitmap = qrCode.GetGraphic(pixelsPerModule);
-                
-                using var stream = new MemoryStream();
-                bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                var bytes = stream.ToArray();
+                var pngByteQrCode = new PngByteQRCode(qrCodeData);
+                var bytes = pngByteQrCode.GetGraphic(pixelsPerModule);
                 
                 return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
             }
@@ -228,13 +222,10 @@ namespace Fap.Api.Services
             {
                 using var qrGenerator = new QRCodeGenerator();
                 using var qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
-                using var qrCode = new QRCode(qrCodeData);
-                using var bitmap = qrCode.GetGraphic(pixelsPerModule);
-                
-                using var stream = new MemoryStream();
-                bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                
-                return stream.ToArray();
+                var pngByteQrCode = new PngByteQRCode(qrCodeData);
+                var bytes = pngByteQrCode.GetGraphic(pixelsPerModule);
+
+                return bytes;
             }
             catch (Exception ex)
             {
