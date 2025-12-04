@@ -236,7 +236,7 @@ namespace Fap.Infrastructure.Repositories
             .ToListAsync();
 
         // Filter 7: Check prerequisites in-memory (complex logic)
-        var eligibleStudents = new List<Student>();
+    var eligibleStudents = new List<Student>();
 
         foreach (var student in candidateStudents)
         {
@@ -272,6 +272,13 @@ namespace Fap.Infrastructure.Repositories
             eligibleStudents.Add(student);
         }
 
+        if (classId.HasValue)
+        {
+            eligibleStudents = await RemoveStudentsWithScheduleConflictsAsync(
+                eligibleStudents,
+                classId.Value);
+        }
+
         // Apply pagination
         var totalCount = eligibleStudents.Count;
         var pagedStudents = eligibleStudents
@@ -280,6 +287,117 @@ namespace Fap.Infrastructure.Repositories
             .ToList();
 
         return (pagedStudents, totalCount);
+    }
+
+    private async Task<List<Student>> RemoveStudentsWithScheduleConflictsAsync(
+        List<Student> candidates,
+        Guid classId)
+    {
+        if (!candidates.Any())
+        {
+            return candidates;
+        }
+
+        var targetSlots = await _context.Slots
+            .AsNoTracking()
+            .Where(slot => slot.ClassId == classId &&
+                           slot.Status != "Cancelled" &&
+                           slot.TimeSlotId.HasValue)
+            .Select(slot => new
+            {
+                Date = slot.Date.Date,
+                TimeSlotId = slot.TimeSlotId!.Value
+            })
+            .ToListAsync();
+
+        if (!targetSlots.Any())
+        {
+            return candidates;
+        }
+
+        var studentIds = candidates.Select(s => s.Id).ToList();
+
+        var studentClassMemberships = await _context.ClassMembers
+            .AsNoTracking()
+            .Where(cm => studentIds.Contains(cm.StudentId))
+            .Select(cm => new { cm.StudentId, cm.ClassId })
+            .ToListAsync();
+
+        if (!studentClassMemberships.Any())
+        {
+            return candidates;
+        }
+
+        var relevantClassIds = studentClassMemberships
+            .Select(m => m.ClassId)
+            .Distinct()
+            .ToList();
+
+        var studentSchedules = await _context.Slots
+            .AsNoTracking()
+            .Where(slot => relevantClassIds.Contains(slot.ClassId) &&
+                           slot.Status != "Cancelled" &&
+                           slot.TimeSlotId.HasValue)
+            .Select(slot => new
+            {
+                slot.ClassId,
+                Date = slot.Date.Date,
+                TimeSlotId = slot.TimeSlotId!.Value
+            })
+            .ToListAsync();
+
+        if (!studentSchedules.Any())
+        {
+            return candidates;
+        }
+
+        var slotsByClassId = studentSchedules
+            .GroupBy(s => s.ClassId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var classIdsByStudent = studentClassMemberships
+            .GroupBy(m => m.StudentId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.ClassId).Distinct().ToList());
+
+        var targetSlotSet = targetSlots
+            .Select(slot => (slot.Date, slot.TimeSlotId))
+            .ToList();
+
+        var conflictFreeStudents = new List<Student>();
+
+        foreach (var student in candidates)
+        {
+            if (!classIdsByStudent.TryGetValue(student.Id, out var studentClassIds) || !studentClassIds.Any())
+            {
+                conflictFreeStudents.Add(student);
+                continue;
+            }
+
+            var hasConflict = false;
+
+            foreach (var studentClassId in studentClassIds)
+            {
+                if (!slotsByClassId.TryGetValue(studentClassId, out var studentSlots))
+                {
+                    continue;
+                }
+
+                if (studentSlots.Any(studentSlot => targetSlotSet.Any(target =>
+                        target.TimeSlotId == studentSlot.TimeSlotId &&
+                        target.Date == studentSlot.Date)))
+                {
+                    hasConflict = true;
+                    break;
+                }
+            }
+
+            if (!hasConflict)
+            {
+                conflictFreeStudents.Add(student);
+            }
+        }
+
+        return conflictFreeStudents;
     }
 
      /// <summary>

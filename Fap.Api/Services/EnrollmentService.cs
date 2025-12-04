@@ -5,6 +5,7 @@ using Fap.Domain.DTOs.Enrollment;
 using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Fap.Api.Services
 {
@@ -123,7 +124,40 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 8. Check sequence order (warning only, not blocking)
+                // 8. Ensure requested class slots don't clash with student's existing classes
+                var classSlots = (await _uow.Slots.GetByClassIdAsync(request.ClassId)).ToList();
+                if (classSlots.Any())
+                {
+                    var conflictingSlots = new List<string>();
+
+                    foreach (var slot in classSlots)
+                    {
+                        var hasConflict = await _uow.ClassMembers.HasStudentSlotConflictAsync(
+                            request.StudentId,
+                            slot.Date,
+                            slot.TimeSlotId);
+
+                        if (hasConflict)
+                        {
+                            var slotLabel = slot.TimeSlot?.Name ?? "TimeSlot";
+                            conflictingSlots.Add($"{slot.Date:yyyy-MM-dd} ({slotLabel})");
+                        }
+                    }
+
+                    if (conflictingSlots.Any())
+                    {
+                        response.Errors.Add($"Schedule conflict detected on: {string.Join(", ", conflictingSlots)}");
+                        response.Message = "Enrollment creation failed - Schedule conflict";
+                        _logger.LogWarning(
+                            "Enrollment rejected: Student {StudentId} has slot conflicts for class {ClassId} on {Conflicts}",
+                            request.StudentId,
+                            request.ClassId,
+                            string.Join(", ", conflictingSlots));
+                        return response;
+                    }
+                }
+
+                // 9. Check sequence order (warning only, not blocking)
                 if (roadmapEntry != null)
                 {
                     var sequenceWarning = await CheckSequenceOrderAsync(request.StudentId, roadmapEntry);

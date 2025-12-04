@@ -111,7 +111,7 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 3. Validate Teacher exists
+                // 4. Validate Teacher exists
                 var teacher = await _uow.Teachers.GetByIdAsync(request.TeacherId);
                 if (teacher == null)
                 {
@@ -127,7 +127,16 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 5. Create new class with SubjectOfferingId
+                // 6. Validate teacher availability for provided initial slots
+                var initialSlotConflicts = await FindTeacherConflictsForSlotDefinitionsAsync(request.TeacherId, request.InitialSlots);
+                if (initialSlotConflicts.Any())
+                {
+                    response.Errors.Add($"Teacher has schedule conflicts on: {string.Join(", ", initialSlotConflicts)}");
+                    response.Message = "Class creation failed - Teacher unavailable";
+                    return response;
+                }
+
+                // 7. Create new class with SubjectOfferingId
                 var newClass = new Domain.Entities.Class
                 {
                     Id = Guid.NewGuid(),
@@ -244,6 +253,27 @@ namespace Fap.Api.Services
                 if (!await ValidateTeacherSpecializationAsync(subjectOffering.SubjectId, teacher.Id, response.Errors))
                 {
                     response.Message = "Class update failed";
+                    return response;
+                }
+
+                var teacherChanged = existingClass.TeacherUserId != request.TeacherId;
+
+                if (teacherChanged)
+                {
+                    var existingSlotConflicts = await FindTeacherConflictsForExistingSlotsAsync(request.TeacherId, existingClass.Id);
+                    if (existingSlotConflicts.Any())
+                    {
+                        response.Errors.Add($"Teacher has schedule conflicts with existing class slots: {string.Join(", ", existingSlotConflicts)}");
+                        response.Message = "Class update failed - Teacher unavailable";
+                        return response;
+                    }
+                }
+
+                var additionalSlotConflicts = await FindTeacherConflictsForSlotDefinitionsAsync(request.TeacherId, request.AdditionalSlots);
+                if (additionalSlotConflicts.Any())
+                {
+                    response.Errors.Add($"Teacher has schedule conflicts for new slots: {string.Join(", ", additionalSlotConflicts)}");
+                    response.Message = "Class update failed - Teacher unavailable";
                     return response;
                 }
 
@@ -640,6 +670,67 @@ namespace Fap.Api.Services
             }
 
             return true;
+        }
+
+        private async Task<List<string>> FindTeacherConflictsForSlotDefinitionsAsync(Guid teacherId, IEnumerable<CreateClassSlotRequest>? slotDefinitions)
+        {
+            var conflicts = new List<string>();
+
+            if (slotDefinitions == null)
+            {
+                return conflicts;
+            }
+
+            foreach (var slot in slotDefinitions)
+            {
+                if (!slot.TimeSlotId.HasValue)
+                {
+                    continue;
+                }
+
+                var teacherForSlot = slot.SubstituteTeacherId ?? teacherId;
+
+                var hasConflict = await _uow.Slots.HasTeacherConflictAsync(
+                    teacherForSlot,
+                    slot.Date,
+                    slot.TimeSlotId);
+
+                if (hasConflict)
+                {
+                    var slotLabel = slot.TimeSlotId.Value.ToString();
+                    conflicts.Add($"{slot.Date:yyyy-MM-dd} ({slotLabel})");
+                }
+            }
+
+            return conflicts;
+        }
+
+        private async Task<List<string>> FindTeacherConflictsForExistingSlotsAsync(Guid teacherId, Guid classId)
+        {
+            var conflicts = new List<string>();
+            var classSlots = await _uow.Slots.GetByClassIdAsync(classId);
+
+            foreach (var slot in classSlots)
+            {
+                if (!slot.TimeSlotId.HasValue || slot.SubstituteTeacherId.HasValue)
+                {
+                    continue;
+                }
+
+                var hasConflict = await _uow.Slots.HasTeacherConflictAsync(
+                    teacherId,
+                    slot.Date,
+                    slot.TimeSlotId,
+                    slot.Id);
+
+                if (hasConflict)
+                {
+                    var slotLabel = slot.TimeSlot?.Name ?? "TimeSlot";
+                    conflicts.Add($"{slot.Date:yyyy-MM-dd} ({slotLabel})");
+                }
+            }
+
+            return conflicts;
         }
     }
 }
