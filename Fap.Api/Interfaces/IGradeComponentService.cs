@@ -16,5 +16,9 @@ namespace Fap.Api.Interfaces
         Task<GradeComponentResponse> UpdateGradeComponentAsync(Guid id, UpdateGradeComponentRequest request);
 
         Task<GradeComponentResponse> DeleteGradeComponentAsync(Guid id);
+
+        Task<List<GradeComponentDto>> CreateSubjectGradeComponentsAsync(CreateSubjectGradeComponentsRequest request);
+
+        Task<List<GradeComponentDto>> GetSubjectGradeComponentTreeAsync(Guid subjectId);
     }
 }

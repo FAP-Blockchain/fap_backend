@@ -114,6 +114,13 @@ namespace Fap.Infrastructure.Data
                 .HasForeignKey(gc => gc.SubjectId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // ✅ NEW: GradeComponent Self-Referencing (Parent-Child)
+            modelBuilder.Entity<GradeComponent>()
+                .HasOne(gc => gc.Parent)
+                .WithMany(gc => gc.SubComponents)
+                .HasForeignKey(gc => gc.ParentId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting parent if children exist
+
             // ✅ NEW: SubjectOffering <-> Subject
             modelBuilder.Entity<SubjectOffering>()
                 .HasOne(so => so.Subject)

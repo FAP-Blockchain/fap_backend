@@ -12,6 +12,28 @@ namespace Fap.Domain.DTOs.GradeComponent
         public string SubjectCode { get; set; }
         public string SubjectName { get; set; }
         public int GradeCount { get; set; }
+        public Guid? ParentId { get; set; }
+        public List<GradeComponentDto> SubComponents { get; set; } = new List<GradeComponentDto>();
+    }
+
+    public class CreateGradeComponentDto
+    {
+        [Required]
+        public string Name { get; set; }
+
+        [Range(0, 100)]
+        public int WeightPercent { get; set; }
+
+        public List<CreateGradeComponentDto> SubComponents { get; set; } = new List<CreateGradeComponentDto>();
+    }
+
+    public class CreateSubjectGradeComponentsRequest
+    {
+        [Required]
+        public Guid SubjectId { get; set; }
+
+        [Required]
+        public List<CreateGradeComponentDto> Components { get; set; }
     }
 
     public class CreateGradeComponentRequest

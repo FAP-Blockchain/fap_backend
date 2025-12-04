@@ -21,6 +21,12 @@ namespace Fap.Domain.Entities
         [ForeignKey(nameof(SubjectId))]
         public virtual Subject Subject { get; set; }
 
+        public Guid? ParentId { get; set; }
+        [ForeignKey(nameof(ParentId))]
+        public virtual GradeComponent? Parent { get; set; }
+
+        public virtual ICollection<GradeComponent> SubComponents { get; set; }
+
         public virtual ICollection<Grade> Grades { get; set; }
     }
 }

@@ -44,6 +44,31 @@ namespace Fap.Api.Controllers
         }
 
         /// <summary>
+        /// GET /api/grade-components/subject/{subjectId}/tree - Get hierarchical components for a subject
+        /// </summary>
+        [HttpGet("subject/{subjectId:guid}/tree")]
+        [ProducesResponseType(typeof(IEnumerable<GradeComponentDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetSubjectGradeComponentTree(Guid subjectId)
+        {
+            try
+            {
+                var components = await _gradeComponentService.GetSubjectGradeComponentTreeAsync(subjectId);
+                return Ok(components);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting grade component tree for subject {SubjectId}", subjectId);
+                return StatusCode(500, new { message = "An error occurred while retrieving grade component tree" });
+            }
+        }
+
+        /// <summary>
         /// GET /api/grade-components/{id} - Get grade component by ID
         /// </summary>
         [HttpGet("{id}")]
@@ -165,6 +190,34 @@ namespace Fap.Api.Controllers
             {
                 _logger.LogError(ex, "Error deleting grade component {GradeComponentId}", id);
                 return StatusCode(500, new { message = "An error occurred while deleting grade component" });
+            }
+        }
+        /// <summary>
+        /// POST /api/grade-components/bulk - Create/Update all grade components for a subject
+        /// </summary>
+        [HttpPost("bulk")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(IEnumerable<GradeComponentDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateSubjectGradeComponents([FromBody] CreateSubjectGradeComponentsRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _gradeComponentService.CreateSubjectGradeComponentsAsync(request);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating subject grade components");
+                return StatusCode(500, new { message = "An error occurred while creating subject grade components" });
             }
         }
     }

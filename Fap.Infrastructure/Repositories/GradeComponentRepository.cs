@@ -37,6 +37,16 @@ namespace Fap.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<GradeComponent>> GetBySubjectWithGradesAsync(Guid subjectId)
+        {
+            return await _dbSet
+                .Include(gc => gc.Subject)
+                .Include(gc => gc.Grades)
+                .Where(gc => gc.SubjectId == subjectId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<bool> IsComponentInUseAsync(Guid componentId)
         {
             return await _context.Grades

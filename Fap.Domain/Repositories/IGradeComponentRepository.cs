@@ -12,6 +12,8 @@ namespace Fap.Domain.Repositories
         Task<GradeComponent?> GetByNameAsync(string name);
    
         Task<List<GradeComponent>> GetAllWithGradeCountAsync();
+
+        Task<List<GradeComponent>> GetBySubjectWithGradesAsync(Guid subjectId);
       
         Task<bool> IsComponentInUseAsync(Guid componentId);
     }

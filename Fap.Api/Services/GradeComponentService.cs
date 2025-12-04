@@ -242,5 +242,183 @@ namespace Fap.Api.Services
                 return response;
             }
         }
+        public async Task<List<GradeComponentDto>> CreateSubjectGradeComponentsAsync(CreateSubjectGradeComponentsRequest request)
+        {
+            // 1. Validate Subject
+            var subject = await _uow.Subjects.GetByIdAsync(request.SubjectId);
+            if (subject == null)
+            {
+                throw new InvalidOperationException($"Subject with ID '{request.SubjectId}' not found");
+            }
+
+            if (request.Components == null || !request.Components.Any())
+            {
+                throw new InvalidOperationException("At least one grade component is required when configuring a subject.");
+            }
+
+            // 2. Validate Total Weight of Top-Level Components and all descendants
+            ValidateComponentTree(
+                request.Components,
+                expectedTotalWeight: 100,
+                context: $"subject '{subject.SubjectCode ?? subject.SubjectName}' components");
+
+            // 3. Clear existing components for this subject (Optional: or update them)
+            // For simplicity, we might want to remove old ones and add new ones, 
+            // BUT we must check if grades exist. If grades exist, we can't just delete.
+            // Assuming this is for setting up a NEW subject or resetting one without grades.
+            var existingComponents = (await _uow.GradeComponents.GetAllWithGradeCountAsync())
+                                    .Where(gc => gc.SubjectId == request.SubjectId)
+                                    .ToList();
+
+            if (existingComponents.Any(gc => gc.Grades != null && gc.Grades.Any()))
+            {
+                 throw new InvalidOperationException("Cannot reset grade components because grades have already been recorded for this subject.");
+            }
+
+            // Remove existing
+            foreach (var existing in existingComponents)
+            {
+                _uow.GradeComponents.Remove(existing);
+            }
+
+            // 4. Create new components recursively
+            var createdDtos = new List<GradeComponentDto>();
+
+            foreach (var compDto in request.Components)
+            {
+                var created = await CreateGradeComponentRecursiveAsync(compDto, request.SubjectId, parentId: null);
+                createdDtos.Add(created);
+            }
+
+            await _uow.SaveChangesAsync();
+            return createdDtos;
+        }
+
+        public async Task<List<GradeComponentDto>> GetSubjectGradeComponentTreeAsync(Guid subjectId)
+        {
+            var subject = await _uow.Subjects.GetByIdAsync(subjectId);
+            if (subject == null)
+            {
+                throw new InvalidOperationException($"Subject with ID '{subjectId}' not found");
+            }
+
+            var components = await _uow.GradeComponents.GetBySubjectWithGradesAsync(subjectId);
+
+            if (components == null || !components.Any())
+            {
+                return new List<GradeComponentDto>();
+            }
+
+            var dtoLookup = components.ToDictionary(
+                gc => gc.Id,
+                gc => MapGradeComponentToDto(gc));
+
+            foreach (var dto in dtoLookup.Values)
+            {
+                dto.SubComponents.Clear();
+            }
+
+            var roots = new List<GradeComponentDto>();
+
+            foreach (var component in components)
+            {
+                var dto = dtoLookup[component.Id];
+
+                if (component.ParentId.HasValue && dtoLookup.TryGetValue(component.ParentId.Value, out var parentDto))
+                {
+                    parentDto.SubComponents.Add(dto);
+                }
+                else
+                {
+                    roots.Add(dto);
+                }
+            }
+
+            return roots.OrderBy(r => r.Name).ToList();
+        }
+
+        private static GradeComponentDto MapGradeComponentToDto(GradeComponent component)
+        {
+            return new GradeComponentDto
+            {
+                Id = component.Id,
+                Name = component.Name,
+                WeightPercent = component.WeightPercent,
+                SubjectId = component.SubjectId,
+                SubjectCode = component.Subject?.SubjectCode ?? string.Empty,
+                SubjectName = component.Subject?.SubjectName ?? string.Empty,
+                GradeCount = component.Grades?.Count ?? 0,
+                ParentId = component.ParentId,
+                SubComponents = new List<GradeComponentDto>()
+            };
+        }
+
+        private static void ValidateComponentTree(
+            IEnumerable<CreateGradeComponentDto> components,
+            int expectedTotalWeight,
+            string context)
+        {
+            var componentList = components?.ToList() ?? new List<CreateGradeComponentDto>();
+            var totalWeight = componentList.Sum(c => c.WeightPercent);
+
+            if (totalWeight != expectedTotalWeight)
+            {
+                var expectedText = expectedTotalWeight == 100
+                    ? "100%"
+                    : $"{expectedTotalWeight}%";
+
+                throw new InvalidOperationException(
+                    $"Weight verification failed for {context}. Expected {expectedText} but found {totalWeight}%.");
+            }
+
+            foreach (var component in componentList)
+            {
+                if (component.SubComponents != null && component.SubComponents.Any())
+                {
+                    ValidateComponentTree(
+                        component.SubComponents,
+                        component.WeightPercent,
+                        $"component '{component.Name}'");
+                }
+            }
+        }
+
+        private async Task<GradeComponentDto> CreateGradeComponentRecursiveAsync(
+            CreateGradeComponentDto dto,
+            Guid subjectId,
+            Guid? parentId)
+        {
+            var entity = new GradeComponent
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name,
+                WeightPercent = dto.WeightPercent,
+                SubjectId = subjectId,
+                ParentId = parentId
+            };
+
+            await _uow.GradeComponents.AddAsync(entity);
+
+            var response = new GradeComponentDto
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                WeightPercent = entity.WeightPercent,
+                SubjectId = entity.SubjectId,
+                ParentId = entity.ParentId,
+                SubComponents = new List<GradeComponentDto>()
+            };
+
+            if (dto.SubComponents != null && dto.SubComponents.Any())
+            {
+                foreach (var child in dto.SubComponents)
+                {
+                    var childResponse = await CreateGradeComponentRecursiveAsync(child, subjectId, entity.Id);
+                    response.SubComponents.Add(childResponse);
+                }
+            }
+
+            return response;
+        }
     }
 }
