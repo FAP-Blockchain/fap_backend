@@ -27,12 +27,14 @@ namespace Fap.Domain.DTOs.Class
         public string TeacherCode { get; set; } = string.Empty;
         public string? TeacherEmail { get; set; }
         public string? TeacherPhone { get; set; }
+        public string? TeacherWalletAddress { get; set; }
         
         // Class Info
         public int MaxEnrollment { get; set; }
         public int CurrentEnrollment { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public long? OnChainClassId { get; set; }
     }
 
     public class ClassDetailDto

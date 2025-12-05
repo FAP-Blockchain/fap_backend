@@ -130,6 +130,7 @@ public class SlotAttendanceDto
     public int PresentCount { get; set; }
     public int AbsentCount { get; set; }
     public decimal AttendanceRate { get; set; }
+    public long? OnChainClassId { get; set; }
 }
 
 public class StudentAttendanceRecord
@@ -144,7 +145,7 @@ public class StudentAttendanceRecord
     public string? Notes { get; set; }
     public bool IsExcused { get; set; }
     public string? ExcuseReason { get; set; }
-    // Optional: payload for frontend to call smart contract per attendance record
+    public string? WalletAddress { get; set; }
     public AttendanceOnChainPayloadDto? OnChainPayload { get; set; }
 }
 

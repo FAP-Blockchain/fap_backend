@@ -136,14 +136,15 @@ namespace Fap.Api.Services
                     return response;
                 }
 
-                // 7. Create new class with SubjectOfferingId
+                // 7. Create new class with SubjectOfferingId (on-chain ID will be managed separately)
                 var newClass = new Domain.Entities.Class
                 {
                     Id = Guid.NewGuid(),
                     ClassCode = request.ClassCode,
                     SubjectOfferingId = request.SubjectOfferingId,
                     TeacherUserId = request.TeacherId,
-                    MaxEnrollment = request.MaxEnrollment
+                    MaxEnrollment = request.MaxEnrollment,
+                    OnChainClassId = null
                 };
 
                 await _uow.Classes.AddAsync(newClass);
@@ -731,6 +732,54 @@ namespace Fap.Api.Services
             }
 
             return conflicts;
+        }
+
+        public async Task<ClassResponse> UpdateOnChainClassIdAsync(Guid classId, long onChainClassId)
+        {
+            var response = new ClassResponse
+            {
+                ClassId = classId
+            };
+
+            try
+            {
+                var existingClass = await _uow.Classes.GetByIdAsync(classId);
+                if (existingClass == null)
+                {
+                    response.Errors.Add($"Class with ID '{classId}' not found");
+                    response.Message = "Class update failed";
+                    return response;
+                }
+
+                if (onChainClassId <= 0)
+                {
+                    response.Errors.Add("OnChainClassId must be greater than 0");
+                    response.Message = "Class update failed";
+                    return response;
+                }
+
+                existingClass.OnChainClassId = onChainClassId;
+                existingClass.UpdatedAt = DateTime.UtcNow;
+
+                _uow.Classes.Update(existingClass);
+                await _uow.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Updated OnChainClassId for class {ClassId} to {OnChainClassId}",
+                    classId, onChainClassId);
+
+                response.Success = true;
+                response.ClassCode = existingClass.ClassCode;
+                response.Message = "OnChainClassId updated successfully";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating OnChainClassId for class {ClassId}", classId);
+                response.Errors.Add($"Internal error: {ex.Message}");
+                response.Message = "Class update failed";
+                return response;
+            }
         }
     }
 }
