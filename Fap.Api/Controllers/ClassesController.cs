@@ -34,6 +34,32 @@ IGradeService gradeService,
             _logger = logger;
         }
 
+        // ==================== ON-CHAIN CLASS ID ====================
+
+        /// <summary>
+        /// Cập nhật OnChainClassId cho một lớp sau khi đã tạo lớp trên blockchain.
+        /// </summary>
+        [HttpPut("{id:guid}/onchain")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateOnChainClassId(Guid id, [FromBody] UpdateOnChainClassIdRequest request)
+        {
+            try
+            {
+                var result = await _classService.UpdateOnChainClassIdAsync(id, request.OnChainClassId);
+                if (!result.Success)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating OnChainClassId for class {ClassId}", id);
+                return StatusCode(500, new { message = "An error occurred while updating on-chain class id" });
+            }
+        }
+
         /// <summary>
         /// Get paginated list of classes with filtering and sorting
         /// </summary>

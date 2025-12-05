@@ -15,5 +15,7 @@ namespace Fap.Api.Interfaces
         // ==================== NEW METHODS ====================
         Task<AssignStudentsResponse> AssignStudentsToClassAsync(Guid classId, AssignStudentsRequest request);
         Task<RemoveStudentResponse> RemoveStudentFromClassAsync(Guid classId, Guid studentId);
+
+        Task<ClassResponse> UpdateOnChainClassIdAsync(Guid classId, long onChainClassId);
     }
 }

@@ -217,21 +217,21 @@ namespace Fap.Api.Services
                     }
                 }
 
-                var walletResult = await _walletService.GetOrCreateWalletAsync(
-                    request.WalletAddress,
-                    userId: null  // Will associate after user creation
-                );
-
-                if (!walletResult.Success || walletResult.Wallet == null)
+                // Phương án 2 + MetaMask: backend không tự sinh ví nữa.
+                // Nếu FE gửi walletAddress thì validate sơ bộ, nếu không thì để null.
+                string? walletAddress = null;
+                if (!string.IsNullOrWhiteSpace(request.WalletAddress))
                 {
-                    response.Errors.Add("Failed to generate wallet");
-                    response.Message = "Registration failed";
-                    return response;
-                }
+                    var trimmed = request.WalletAddress.Trim();
+                    if (!_walletService.IsValidAddress(trimmed))
+                    {
+                        response.Errors.Add("Invalid wallet address format");
+                        response.Message = "Registration failed";
+                        return response;
+                    }
 
-                var walletAddress = walletResult.Wallet.Address;
-                _logger.LogInformation("Wallet ready: {Address} (IsNew: {IsNew})",
-                    walletAddress, walletResult.Wallet.IsNewWallet);
+                    walletAddress = trimmed;
+                }
 
                 var user = _mapper.Map<User>(request);
                 user.Id = Guid.NewGuid();
@@ -245,8 +245,9 @@ namespace Fap.Api.Services
 
                 _logger.LogInformation("User created with ID: {Id}", user.Id);
 
-                // Associate wallet with user in Wallets table
-                if (await _walletService.WalletExistsAsync(walletAddress))
+                // Associate wallet with user in Wallets table nếu có ví
+                if (!string.IsNullOrWhiteSpace(walletAddress) &&
+                    await _walletService.WalletExistsAsync(walletAddress))
                 {
                     await _walletService.AssociateWalletWithUserAsync(walletAddress, user.Id);
                 }

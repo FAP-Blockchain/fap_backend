@@ -31,6 +31,9 @@ namespace Fap.Domain.Entities
 
         public bool IsActive { get; set; } = true;
 
+        // On-chain class id (uint256 on chain); nullable for backward compatibility
+        public long? OnChainClassId { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

@@ -139,6 +139,7 @@ namespace Fap.Api.Services
             {
                 var attendance = attendanceList.FirstOrDefault(a => a.StudentId == member.StudentId);
                 var student = member.Student;
+                var wallet = student.User?.WalletAddress;
 
                 var record = new StudentAttendanceRecord
                 {
@@ -151,11 +152,11 @@ namespace Fap.Api.Services
                     IsPresent = attendance?.IsPresent,
                     Notes = attendance?.Notes,
                     IsExcused = attendance?.IsExcused ?? false,
-                    ExcuseReason = attendance?.ExcuseReason
+                    ExcuseReason = attendance?.ExcuseReason,
+                    WalletAddress = wallet
                 };
 
                 // Build per-record on-chain payload if wallet and attendance exist
-                var wallet = student.User?.WalletAddress;
                 if (attendance != null && !string.IsNullOrWhiteSpace(wallet))
                 {
                     var metadata = new
@@ -203,7 +204,8 @@ namespace Fap.Api.Services
                 TotalStudents = totalStudents,
                 PresentCount = presentCount,
                 AbsentCount = absentCount,
-                AttendanceRate = totalStudents > 0 ? Math.Round((decimal)presentCount / totalStudents * 100, 2) : 0
+                AttendanceRate = totalStudents > 0 ? Math.Round((decimal)presentCount / totalStudents * 100, 2) : 0,
+                OnChainClassId = classEntity.OnChainClassId
             };
         }
 

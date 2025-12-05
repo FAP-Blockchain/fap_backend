@@ -58,6 +58,10 @@ namespace Fap.Api.Mappings
                     src.Teacher != null && src.Teacher.User != null
                         ? src.Teacher.User.Email
                         : null))
+                .ForMember(dest => dest.TeacherWalletAddress, opt => opt.MapFrom(src =>
+                    src.Teacher != null && src.Teacher.User != null
+                        ? src.Teacher.User.WalletAddress
+                        : null))
                 .ForMember(dest => dest.TeacherPhone, opt => opt.MapFrom(src =>
                     src.Teacher != null && src.Teacher.User != null ? src.Teacher.User.PhoneNumber : null))
 
@@ -66,7 +70,8 @@ namespace Fap.Api.Mappings
                 .ForMember(dest => dest.CurrentEnrollment, opt => opt.MapFrom(src =>
                     src.Members != null ? src.Members.Count : 0))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.OnChainClassId, opt => opt.MapFrom(src => src.OnChainClassId));
 
             CreateMap<Class, ClassDetailDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
