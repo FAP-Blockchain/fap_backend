@@ -29,7 +29,34 @@ namespace Fap.Api.Controllers
             _logger = logger;
         }
 
-        [HttpPost("tamper_credential")]
+        [HttpGet("latest_credential")]
+        public async Task<IActionResult> GetLatestCredential()
+        {
+            var credential = await _context.Credentials
+                .OrderByDescending(c => c.IssuedDate)
+                .FirstOrDefaultAsync();
+
+            if (credential == null)
+            {
+                return NotFound(new { success = false, message = "No credentials found." });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    id = credential.Id,
+                    studentId = credential.StudentId,
+                    fileUrl = credential.FileUrl,
+                    ipfsHash = credential.IPFSHash,
+                    issuedDate = credential.IssuedDate,
+                    isOnBlockchain = credential.IsOnBlockchain
+                }
+            });
+        }
+
+        [HttpPut("tamper_credential")]
         public async Task<IActionResult> TamperLatestCredential([FromBody] TamperCredentialRequest request)
         {
             var credential = await _context.Credentials
