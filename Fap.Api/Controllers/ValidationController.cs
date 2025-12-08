@@ -33,7 +33,8 @@ namespace Fap.Api.Controllers
         public async Task<IActionResult> GetCredentials()
         {
             var credentials = await _context.Credentials
-                .Include(c => c.Student).ThenInclude(s => s.User)
+                .Include(c => c.Student)
+                    .ThenInclude(s => s.User)
                 .Include(c => c.CertificateTemplate)
                 .OrderByDescending(c => c.IssuedDate)
                 .Take(50) // Limit to last 50
@@ -42,7 +43,8 @@ namespace Fap.Api.Controllers
                     id = c.Id,
                     studentId = c.StudentId,
                     studentName = c.Student != null && c.Student.User != null ? c.Student.User.FullName : "Unknown",
-                    certificateName = c.CertificateTemplate != null ? c.CertificateTemplate.Name : c.CertificateType,
+                    studentCode = c.Student != null ? c.Student.StudentCode : "Unknown",
+                    certificateName = c.CertificateTemplate != null ? c.CertificateTemplate.Name : "Unknown",
                     fileUrl = c.FileUrl,
                     ipfsHash = c.IPFSHash,
                     issuedDate = c.IssuedDate,
