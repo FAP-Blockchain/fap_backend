@@ -29,6 +29,30 @@ namespace Fap.Api.Controllers
             _logger = logger;
         }
 
+        [HttpGet("credentials")]
+        public async Task<IActionResult> GetCredentials()
+        {
+            var credentials = await _context.Credentials
+                .OrderByDescending(c => c.IssuedDate)
+                .Take(50) // Limit to last 50
+                .Select(c => new
+                {
+                    id = c.Id,
+                    studentId = c.StudentId,
+                    fileUrl = c.FileUrl,
+                    ipfsHash = c.IPFSHash,
+                    issuedDate = c.IssuedDate,
+                    isOnBlockchain = c.IsOnBlockchain
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                success = true,
+                data = credentials
+            });
+        }
+
         [HttpGet("latest_credential")]
         public async Task<IActionResult> GetLatestCredential()
         {
@@ -44,6 +68,63 @@ namespace Fap.Api.Controllers
             return Ok(new
             {
                 success = true,
+                data = new
+                {
+                    id = credential.Id,
+                    studentId = credential.StudentId,
+                    fileUrl = credential.FileUrl,
+                    ipfsHash = credential.IPFSHash,
+                    issuedDate = credential.IssuedDate,
+                    isOnBlockchain = credential.IsOnBlockchain
+                }
+            });
+        }
+
+        [HttpPut("tamper_credential/{id}")]
+        public async Task<IActionResult> TamperCredential(Guid id, [FromBody] TamperCredentialRequest request)
+        {
+            var credential = await _context.Credentials.FindAsync(id);
+
+            if (credential == null)
+            {
+                return NotFound(new { success = false, message = "Credential not found." });
+            }
+
+            if (string.IsNullOrEmpty(request.FileUrl))
+            {
+                return BadRequest(new { success = false, message = "FileUrl is required." });
+            }
+
+            var originalUrl = credential.FileUrl;
+            
+            // Tamper with the data
+            credential.FileUrl = request.FileUrl;
+            // Use provided hash or a default fake one if provided, otherwise keep original hash (mismatch)
+            // Actually, to simulate tampering, we usually change the file content (FileUrl points to new file)
+            // but keep the Hash the same (so verification fails because Hash(NewFile) != OldHash).
+            // OR we change the Hash to something else.
+            // The user request says "thay đổi file", implying changing FileUrl.
+            // If we want verification to fail, we just need FileUrl to point to a file that hashes to something DIFFERENT than credential.IPFSHash.
+            // So we update FileUrl. We can optionally update IPFSHash if we want to simulate "Database Tampering" of the hash too, 
+            // but usually tampering means the file content changed but the blockchain record (which we can't change) remains.
+            // However, the previous implementation also updated IPFSHash in DB. 
+            // Let's stick to the previous logic: Update FileUrl in DB. 
+            // If request.IPFSHash is provided, update it in DB too.
+            
+            if (!string.IsNullOrEmpty(request.IPFSHash))
+            {
+                credential.IPFSHash = request.IPFSHash;
+            }
+            
+            await _context.SaveChangesAsync();
+
+            _logger.LogWarning("Tampered with credential {Id}. Original URL: {OrigUrl}, New URL: {NewUrl}", 
+                credential.Id, originalUrl, credential.FileUrl);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Credential has been tampered with.",
                 data = new
                 {
                     id = credential.Id,
