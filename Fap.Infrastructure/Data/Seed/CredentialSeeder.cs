@@ -26,20 +26,32 @@ namespace Fap.Infrastructure.Data.Seed
 
         private async Task SeedCertificateTemplatesAsync()
         {
+            // Check if CurriculumCompletion template exists
+            var hasGradTemplate = await _context.CertificateTemplates.AnyAsync(t => t.TemplateType == "CurriculumCompletion");
+            if (!hasGradTemplate)
+            {
+                Console.WriteLine("Creating missing Graduation Certificate template...");
+                var gradTemplate = new CertificateTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Graduation Diploma",
+                    TemplateType = "CurriculumCompletion",
+                    Description = "Official Graduation Diploma",
+                    TemplateContent = "<html><body><h1>Graduation Diploma</h1></body></html>",
+                    PageSize = "A4",
+                    Orientation = "Landscape",
+                    IsDefault = true,
+                    IsActive = true,
+                    IsSample = false,
+                    Version = 1,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _context.CertificateTemplates.AddAsync(gradTemplate);
+                await _context.SaveChangesAsync();
+            }
+
             if (await _context.CertificateTemplates.AnyAsync())
             {
-                // Update existing Graduation Certificate if needed
-                var gradTemplate = await _context.CertificateTemplates
-                    .FirstOrDefaultAsync(t => t.Name == "Graduation Certificate");
-                
-                if (gradTemplate != null && gradTemplate.TemplateType != "CurriculumCompletion")
-                {
-                    Console.WriteLine("Updating Graduation Certificate template type to CurriculumCompletion...");
-                    gradTemplate.TemplateType = "CurriculumCompletion";
-                    _context.CertificateTemplates.Update(gradTemplate);
-                    await _context.SaveChangesAsync();
-                }
-
                 Console.WriteLine("⏭️ Certificate Templates already exist. Skipping creation...");
                 return;
             }
