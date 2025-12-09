@@ -253,15 +253,56 @@ namespace Fap.Api.Services
                     return (false, "Subject not found");
                 }
 
+                // Check for dependencies that prevent deletion
                 if (subject.Offerings != null && subject.Offerings.Any(o => o.Classes != null && o.Classes.Any()))
                 {
                     return (false, "Cannot delete subject that has existing classes in any semester");
                 }
 
-                // Check if any offering is in a closed semester
                 if (subject.Offerings != null && subject.Offerings.Any(o => o.Semester != null && o.Semester.IsClosed))
                 {
                     return (false, "Cannot delete subjects that have offerings in closed semesters");
+                }
+
+                if (subject.Roadmaps != null && subject.Roadmaps.Any())
+                {
+                    return (false, "Cannot delete subject that is part of student roadmaps");
+                }
+
+                // Check for other dependencies not loaded in GetByIdWithDetailsAsync
+                var hasGrades = await _uow.Grades.FindAsync(g => g.SubjectId == id);
+                if (hasGrades.Any())
+                {
+                    return (false, "Cannot delete subject that has student grades");
+                }
+
+                var hasCurriculumSubjects = await _uow.CurriculumSubjects.FindAsync(cs => cs.SubjectId == id);
+                if (hasCurriculumSubjects.Any())
+                {
+                    return (false, "Cannot delete subject that is part of a curriculum");
+                }
+
+                // If safe to delete, remove related entities first
+                
+                // Remove Specializations (using existing method to clear them)
+                await _uow.Subjects.SetSpecializationsAsync(id, new List<Guid>());
+
+                // Remove Criterias
+                if (subject.SubjectCriterias != null && subject.SubjectCriterias.Any())
+                {
+                    foreach (var criteria in subject.SubjectCriterias)
+                    {
+                        _uow.SubjectCriteria.Delete(criteria);
+                    }
+                }
+
+                // Remove Offerings (we already checked they don't have classes)
+                if (subject.Offerings != null && subject.Offerings.Any())
+                {
+                    foreach (var offering in subject.Offerings)
+                    {
+                        _uow.SubjectOfferings.Remove(offering);
+                    }
                 }
 
                 _uow.Subjects.Remove(subject);
@@ -273,7 +314,9 @@ namespace Fap.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError($"Error deleting subject: {ex.Message}");
-                return (false, "An error occurred while deleting the subject");
+                // Return the inner exception message if available, as it often contains the SQL error details
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                return (false, $"An error occurred while deleting the subject: {errorMessage}");
             }
         }
 
