@@ -18,11 +18,8 @@ namespace Fap.Infrastructure.Data.Seed
 
         public override async Task SeedAsync()
         {
-            if (await _context.CertificateTemplates.AnyAsync())
-            {
-                Console.WriteLine("⏭️ Certificate Templates already exist. Skipping...");
-                return;
-            }
+            // Remove the global check to allow partial seeding
+            // if (await _context.CertificateTemplates.AnyAsync()) ...
 
             var templates = new List<CertificateTemplate>
             {
@@ -143,10 +140,25 @@ namespace Fap.Infrastructure.Data.Seed
                 }
             };
 
-            await _context.CertificateTemplates.AddRangeAsync(templates);
-            await SaveAsync("Certificate Templates");
+            var newTemplates = new List<CertificateTemplate>();
+            foreach (var template in templates)
+            {
+                if (!await _context.CertificateTemplates.AnyAsync(t => t.Id == template.Id))
+                {
+                    newTemplates.Add(template);
+                }
+            }
 
-            Console.WriteLine($"   ✅ Created {templates.Count} certificate templates");
+            if (newTemplates.Any())
+            {
+                await _context.CertificateTemplates.AddRangeAsync(newTemplates);
+                await SaveAsync("Certificate Templates");
+                Console.WriteLine($"   ✅ Created {newTemplates.Count} certificate templates");
+            }
+            else
+            {
+                Console.WriteLine("⏭️ All Certificate Templates already exist. Skipping...");
+            }
         }
     }
 }

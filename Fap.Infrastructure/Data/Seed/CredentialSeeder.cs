@@ -50,16 +50,13 @@ namespace Fap.Infrastructure.Data.Seed
                 await _context.SaveChangesAsync();
             }
 
-            if (await _context.CertificateTemplates.AnyAsync())
-            {
-                Console.WriteLine("⏭️ Certificate Templates already exist. Skipping creation...");
-                return;
-            }
+            // if (await _context.CertificateTemplates.AnyAsync()) ...
 
-            var templates = new List<CertificateTemplate>
+            var templates = new List<CertificateTemplate>();
+
+            if (!await _context.CertificateTemplates.AnyAsync(t => t.TemplateType == "SubjectCompletion"))
             {
-                // Subject Completion Template (Default)
-                new CertificateTemplate
+                templates.Add(new CertificateTemplate
                 {
                     Id = Guid.NewGuid(),
                     Name = "Subject Completion Certificate",
@@ -73,10 +70,12 @@ namespace Fap.Infrastructure.Data.Seed
                     IsSample = false,
                     Version = 1,
                     CreatedAt = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Semester Completion Template (Default)
-                new CertificateTemplate
+            if (!await _context.CertificateTemplates.AnyAsync(t => t.TemplateType == "SemesterCompletion"))
+            {
+                templates.Add(new CertificateTemplate
                 {
                     Id = Guid.NewGuid(),
                     Name = "Semester Completion Certificate",
@@ -90,47 +89,15 @@ namespace Fap.Infrastructure.Data.Seed
                     IsSample = false,
                     Version = 1,
                     CreatedAt = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Curriculum Completion Template (Graduation)
-                new CertificateTemplate
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Graduation Certificate",
-                    TemplateType = "CurriculumCompletion",
-                    Description = "Graduation certificate for completing entire program",
-                    TemplateContent = "<html><body><h1>Certificate of Graduation</h1><p>{{StudentName}} has graduated with {{Classification}}</p></body></html>",
-                    PageSize = "A4",
-                    Orientation = "Landscape",
-                    IsDefault = true,
-                    IsActive = true,
-                    IsSample = false,
-                    Version = 1,
-                    CreatedAt = DateTime.UtcNow
-                },
-
-                // Sample Template
-                new CertificateTemplate
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Sample Excellence Certificate",
-                    TemplateType = "SubjectCompletion",
-                    Description = "Sample template for demonstration",
-                    TemplateContent = "<html><body><h1>Excellence Award</h1></body></html>",
-                    PageSize = "A4",
-                    Orientation = "Portrait",
-                    IsDefault = false,
-                    IsActive = true,
-                    IsSample = true,
-                    Version = 1,
-                    CreatedAt = DateTime.UtcNow
-                }
-            };
-
-            await _context.CertificateTemplates.AddRangeAsync(templates);
-            await SaveAsync("CertificateTemplates");
-
-            Console.WriteLine($"   ✅ Created {templates.Count} certificate templates");
+            if (templates.Any())
+            {
+                await _context.CertificateTemplates.AddRangeAsync(templates);
+                await SaveAsync("CertificateTemplates");
+                Console.WriteLine($"   ✅ Created {templates.Count} additional certificate templates");
+            }
         }
 
         private async Task SeedCredentialRequestsAsync()
