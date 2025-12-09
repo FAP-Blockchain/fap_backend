@@ -30,6 +30,8 @@ namespace Fap.Infrastructure.Data.Seed
         public static readonly Guid DTG102_Winter2025_A = Guid.Parse("40000000-0000-0000-0000-000000000111");
         public static readonly Guid DRS102_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-000000000112");
         public static readonly Guid VCM202_Spring2026_A = Guid.Parse("40000000-0000-0000-0000-000000000113");
+    public static readonly Guid SWT301_Winter2026_A = Guid.Parse("40000000-0000-0000-0000-000000000114");
+    public static readonly Guid SEP490_Spring2027_A = Guid.Parse("40000000-0000-0000-0000-000000000115");
 
         private static readonly IReadOnlyList<ClassDefinition> ClassDefinitions = new List<ClassDefinition>
         {
@@ -57,7 +59,10 @@ namespace Fap.Infrastructure.Data.Seed
             new ClassDefinition(DRP101_Winter2025_A, "DRP101.W25.A", SubjectOfferingSeeder.DRP101_Winter2025, TeacherStudentSeeder.Teacher4Id, 30),
             new ClassDefinition(DTG102_Winter2025_A, "DTG102.W25.A", SubjectOfferingSeeder.DTG102_Winter2025, TeacherStudentSeeder.Teacher4Id, 30),
             new ClassDefinition(DRS102_Spring2026_A, "DRS102.SP26.A", SubjectOfferingSeeder.DRS102_Spring2026, TeacherStudentSeeder.Teacher4Id, 30),
-            new ClassDefinition(VCM202_Spring2026_A, "VCM202.SP26.A", SubjectOfferingSeeder.VCM202_Spring2026, TeacherStudentSeeder.Teacher4Id, 30)
+            new ClassDefinition(VCM202_Spring2026_A, "VCM202.SP26.A", SubjectOfferingSeeder.VCM202_Spring2026, TeacherStudentSeeder.Teacher4Id, 30),
+
+            new ClassDefinition(SWT301_Winter2026_A, "SWT301.W26.A", SubjectOfferingSeeder.SWT301_Winter2026, TeacherStudentSeeder.Teacher2Id, 32),
+            new ClassDefinition(SEP490_Spring2027_A, "SEP490.SP27.A", SubjectOfferingSeeder.SEP490_Spring2027, TeacherStudentSeeder.Teacher1Id, 25)
         };
 
         public ClassSeeder(FapDbContext context) : base(context) { }

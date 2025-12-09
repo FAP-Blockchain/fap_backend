@@ -61,8 +61,8 @@ namespace Fap.Infrastructure.Data.Seed
                 
                 if (student.Id == TeacherStudentSeeder.Student1Id)
                 {
-                    // Scenario 1: Perfect student (SE)
-                    CreatePerfectStudentRoadmap(student, studentSubjects.Select(s => s.Subject).ToList(), semesters, roadmaps);
+                    // Scenario 1: Star student who already finished the full curriculum
+                    CreateStudentCompletedProgram(student, studentSubjects.Select(s => s.Subject).ToList(), semesters, roadmaps);
                 }
                 else if (student.Id == TeacherStudentSeeder.Student2Id)
                 {
@@ -81,8 +81,8 @@ namespace Fap.Infrastructure.Data.Seed
                 }
                 else if (student.Id == TeacherStudentSeeder.Student5Id) // IA Student
                 {
-                    // Scenario 5: IA Student - Good progress
-                    CreateStudentWithCompletedSubjects(student, studentSubjects.Select(s => s.Subject).ToList(), semesters, roadmaps);
+                    // Scenario 5: IA Student - Needs support but no recorded failures
+                    CreateStudentNeedingSupport(student, studentSubjects.Select(s => s.Subject).ToList(), semesters, roadmaps);
                 }
                 else if (student.Id == TeacherStudentSeeder.Student6Id) // IA Student
                 {
@@ -108,7 +108,6 @@ namespace Fap.Infrastructure.Data.Seed
             Console.WriteLine($"      • Completed: {roadmaps.Count(r => r.Status == "Completed")}");
             Console.WriteLine($"      • In Progress: {roadmaps.Count(r => r.Status == "InProgress")}");
             Console.WriteLine($"      • Planned: {roadmaps.Count(r => r.Status == "Planned")}");
-            Console.WriteLine($"      • Failed: {roadmaps.Count(r => r.Status == "Failed")}");
         }
 
         // ==================== TEST SCENARIO CREATORS ====================
@@ -135,6 +134,38 @@ namespace Fap.Infrastructure.Data.Seed
 
                 roadmaps.Add(CreateRoadmapEntry(
                     student.Id, subject.Id, semester.Id, sequenceOrder, status, 8.5m, subject.SubjectName));
+                sequenceOrder++;
+            }
+        }
+
+        private void CreateStudentCompletedProgram(
+            Student student,
+            List<Subject> subjects,
+            List<Semester> semesters,
+            List<StudentRoadmap> roadmaps)
+        {
+            if (subjects.Count == 0) return;
+
+            int sequenceOrder = 1;
+            foreach (var subject in subjects)
+            {
+                var semesterIndex = (sequenceOrder - 1) / 3;
+                if (semesterIndex >= semesters.Count) semesterIndex = semesters.Count - 1;
+                var semester = semesters[semesterIndex];
+
+                // Keep scores high to reflect a completed curriculum without failures
+                var scoreBoost = (sequenceOrder % 5) * 0.2m;
+                var score = Math.Min(9.8m, 8.7m + scoreBoost);
+
+                roadmaps.Add(CreateRoadmapEntry(
+                    student.Id,
+                    subject.Id,
+                    semester.Id,
+                    sequenceOrder,
+                    "Completed",
+                    score,
+                    subject.SubjectName));
+
                 sequenceOrder++;
             }
         }
@@ -202,18 +233,18 @@ namespace Fap.Infrastructure.Data.Seed
 }
         }
 
-        private void CreateStudentWithFailures(
+        private void CreateStudentNeedingSupport(
             Student student,
             List<Subject> subjects,
             List<Semester> semesters,
             List<StudentRoadmap> roadmaps)
         {
-            // Some completed, some failed (need retake)
+            // Some completed, some currently retaking (no recorded failures)
             if (subjects.Count >= 6)
             {
                 roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[0].Id, semesters[0].Id, 1, "Completed", 8.0m, subjects[0].SubjectName));
-                roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[1].Id, semesters[0].Id, 2, "Failed", 3.5m, subjects[1].SubjectName));
-                roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[2].Id, semesters[0].Id, 3, "Failed", 4.0m, subjects[2].SubjectName));
+                roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[1].Id, semesters[0].Id, 2, "InProgress", null, subjects[1].SubjectName));
+                roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[2].Id, semesters[0].Id, 3, "InProgress", null, subjects[2].SubjectName));
                 roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[3].Id, semesters[1].Id, 4, "Completed", 7.0m, subjects[3].SubjectName));
                 roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[4].Id, semesters[1].Id, 5, "Planned", null, subjects[4].SubjectName));
                 roadmaps.Add(CreateRoadmapEntry(student.Id, subjects[5].Id, semesters[1].Id, 6, "Planned", null, subjects[5].SubjectName));
@@ -267,22 +298,18 @@ namespace Fap.Infrastructure.Data.Seed
         {
             var now = DateTime.UtcNow;
 
-            // If semester hasn't started yet
             if (semester.StartDate > now)
             {
                 return "Planned";
             }
-            // If semester has ended
-            else if (semester.EndDate < now)
+
+            if (semester.EndDate < now)
             {
-                // 95% completed, 5% failed
-                return random.Next(100) < 95 ? "Completed" : "Failed";
+                // Completed for past semesters, small chance still being finalized
+                return random.Next(100) < 90 ? "Completed" : "InProgress";
             }
-            // If semester is ongoing
-            else
-            {
-                return "InProgress";
-            }
+
+            return "InProgress";
         }
 
         private decimal GenerateFinalScore(Random random)
@@ -327,7 +354,6 @@ namespace Fap.Infrastructure.Data.Seed
             {
                 "Completed" => $"Successfully completed {subjectName}",
                 "InProgress" => $"Currently enrolled in {subjectName}",
-                "Failed" => "Need to retake this course",
                 "Planned" => $"Planning to take {subjectName} next semester",
                 _ => null
             };
