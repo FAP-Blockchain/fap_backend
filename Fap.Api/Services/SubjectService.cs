@@ -290,7 +290,10 @@ namespace Fap.Api.Services
                 // Remove Criterias
                 if (subject.SubjectCriterias != null && subject.SubjectCriterias.Any())
                 {
-                    foreach (var criteria in subject.SubjectCriterias)
+                    // Create a list copy to avoid modification during iteration if needed, 
+                    // though here we are iterating the collection on the entity.
+                    var criteriasToDelete = subject.SubjectCriterias.ToList();
+                    foreach (var criteria in criteriasToDelete)
                     {
                         _uow.SubjectCriteria.Delete(criteria);
                     }
@@ -299,7 +302,8 @@ namespace Fap.Api.Services
                 // Remove Offerings (we already checked they don't have classes)
                 if (subject.Offerings != null && subject.Offerings.Any())
                 {
-                    foreach (var offering in subject.Offerings)
+                    var offeringsToDelete = subject.Offerings.ToList();
+                    foreach (var offering in offeringsToDelete)
                     {
                         _uow.SubjectOfferings.Remove(offering);
                     }

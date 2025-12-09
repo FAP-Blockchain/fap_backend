@@ -23,13 +23,15 @@ namespace Fap.Infrastructure.Repositories
         {
             return await _context.Credentials
                 .Include(c => c.Student!)
-   .ThenInclude(s => s.User)  // ? Include Student.User for FullName
-     .Include(c => c.CertificateTemplate)
-      .Include(c => c.Subject)
-       .Include(c => c.Semester)
-    .Include(c => c.StudentRoadmap)
-       .FirstOrDefaultAsync(c => c.Id == id);
-      }
+                    .ThenInclude(s => s.User)  // ? Include Student.User for FullName
+                .Include(c => c.Student!)
+                    .ThenInclude(s => s.Curriculum) // Include Curriculum for Graduation Certificate
+                .Include(c => c.CertificateTemplate)
+                .Include(c => c.Subject)
+                .Include(c => c.Semester)
+                .Include(c => c.StudentRoadmap)
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
 
         public async Task<IEnumerable<Credential>> GetAllAsync()
   {
@@ -45,6 +47,8 @@ namespace Fap.Infrastructure.Repositories
      return await _context.Credentials
     .Include(c => c.Student!)
           .ThenInclude(s => s.User)  // ? Include Student.User for FullName
+    .Include(c => c.Student!)
+          .ThenInclude(s => s.Curriculum) // Include Curriculum
           .Include(c => c.CertificateTemplate)
           .Include(c => c.Subject)
            .Include(c => c.Semester)

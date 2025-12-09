@@ -13,6 +13,6 @@ namespace Fap.Domain.DTOs.Credential
         public Guid? StudentRoadmapId { get; set; }
 
         [Required]
-        public string Type { get; set; } = "SubjectCompletion"; // SubjectCompletion, RoadmapCompletion
+        public string Type { get; set; } = "SubjectCompletion"; // SubjectCompletion, RoadmapCompletion, CurriculumCompletion
     }
 }

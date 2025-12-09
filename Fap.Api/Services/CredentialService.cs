@@ -120,6 +120,29 @@ namespace Fap.Api.Services
                      var templates = await _uow.CertificateTemplates.FindAsync(t => t.TemplateType == "RoadmapCompletion" && t.IsActive);
                      template = templates.FirstOrDefault();
                 }
+                else if (request.Type == "CurriculumCompletion")
+                {
+                    // Check if already exists
+                    var existingCredentials = await _uow.Credentials.FindAsync(c =>
+                       c.StudentId == request.StudentId &&
+                       c.CertificateType == "CurriculumCompletion" &&
+                       !c.IsRevoked);
+
+                    if (existingCredentials.Any()) return ServiceResult<CredentialDetailDto>.Fail("Graduation credential already exists");
+
+                    if (!student.IsGraduated)
+                        return ServiceResult<CredentialDetailDto>.Fail("Student has not graduated");
+
+                    credential.FinalGrade = student.GPA;
+                    // Determine classification based on GPA
+                    if (student.GPA >= 3.6m) credential.Classification = "Excellent";
+                    else if (student.GPA >= 3.2m) credential.Classification = "Very Good";
+                    else if (student.GPA >= 2.5m) credential.Classification = "Good";
+                    else credential.Classification = "Average";
+
+                    var templates = await _uow.CertificateTemplates.FindAsync(t => t.TemplateType == "CurriculumCompletion" && t.IsActive);
+                    template = templates.FirstOrDefault();
+                }
 
                 if (template == null)
                     return ServiceResult<CredentialDetailDto>.Fail("Active certificate template not found");
@@ -1519,11 +1542,33 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
                 case "SemesterCompletion":
                     if (!request.SemesterId.HasValue)
                         throw new InvalidOperationException("SemesterId is required for Semester Completion certificate");
+
+                    var semester = await _uow.Semesters.GetByIdAsync(request.SemesterId.Value);
+                    if (semester == null)
+                        throw new InvalidOperationException($"Semester with ID {request.SemesterId} not found");
                     break;
 
                 case "RoadmapCompletion":
                     if (!request.RoadmapId.HasValue)
                         throw new InvalidOperationException("RoadmapId is required for Roadmap Completion certificate");
+
+                    var roadmap = await _uow.StudentRoadmaps.GetByIdAsync(request.RoadmapId.Value);
+                    if (roadmap == null)
+                        throw new InvalidOperationException($"Student Roadmap entry with ID {request.RoadmapId} not found");
+
+                    if (roadmap.StudentId != studentId)
+                        throw new InvalidOperationException("Student Roadmap entry does not belong to this student");
+                    
+                    if (roadmap.Status != "Completed")
+                        throw new InvalidOperationException("Roadmap entry (Capstone/Final Subject) must be completed to request graduation certificate");
+                    break;
+
+                case "CurriculumCompletion":
+                    var student = await _uow.Students.GetByIdAsync(studentId);
+                    if (student == null) throw new InvalidOperationException("Student not found");
+
+                    if (!student.IsGraduated)
+                        throw new InvalidOperationException("Student has not graduated yet");
                     break;
 
                 default:

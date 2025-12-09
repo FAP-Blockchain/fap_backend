@@ -6,7 +6,7 @@ namespace Fap.Domain.DTOs.Credential
     public class RequestCredentialRequest
     {
         [Required, MaxLength(50)]
-        public string CertificateType { get; set; } = null!; // "SubjectCompletion", "SemesterCompletion", "RoadmapCompletion"
+        public string CertificateType { get; set; } = null!; // "SubjectCompletion", "SemesterCompletion", "RoadmapCompletion", "CurriculumCompletion"
 
         public Guid? SubjectId { get; set; }
         public Guid? SemesterId { get; set; }

@@ -119,6 +119,27 @@ namespace Fap.Api.Services
                                         .FontSize(16).Bold().FontColor(Colors.Blue.Darken1);
                                 }
                             }
+                            else if (credential.CertificateType == "CurriculumCompletion")
+                            {
+                                column.Item().AlignCenter().Text(credential.Student?.Curriculum?.Name ?? "University Graduation")
+                                    .FontSize(24).Bold().FontColor(Colors.Red.Darken2);
+
+                                column.Item().PaddingTop(10).AlignCenter().Text("GRADUATION DIPLOMA")
+                                    .FontSize(18).Bold();
+
+                                column.Item().PaddingTop(10).AlignCenter().Row(row =>
+                                {
+                                    row.AutoItem().Text("GPA: ").FontSize(16);
+                                    row.AutoItem().Text($"{credential.FinalGrade:F2}")
+                                        .FontSize(20).Bold().FontColor(Colors.Green.Darken2);
+                                });
+
+                                if (!string.IsNullOrEmpty(credential.Classification))
+                                {
+                                    column.Item().AlignCenter().Text($"Classification: {credential.Classification}")
+                                        .FontSize(16).Bold().FontColor(Colors.Blue.Darken1);
+                                }
+                            }
 
                             // Issue Date
                             column.Item().PaddingTop(20).AlignCenter().Text($"Issued on: {credential.IssuedDate:MMMM dd, yyyy}")

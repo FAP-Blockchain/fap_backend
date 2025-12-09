@@ -12,6 +12,9 @@ namespace Fap.Infrastructure.Data.Seed
     {
         public static async Task SeedAsync(FapDbContext context)
         {
+            // Force update of Credential Templates (Temporary fix for demo)
+            await new CredentialSeeder(context).SeedAsync();
+
             // Quick check - if TimeSlots exist, assume data is already seeded
             if (await context.TimeSlots.AnyAsync())
             {

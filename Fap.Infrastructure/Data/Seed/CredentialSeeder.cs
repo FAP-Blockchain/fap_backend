@@ -28,7 +28,19 @@ namespace Fap.Infrastructure.Data.Seed
         {
             if (await _context.CertificateTemplates.AnyAsync())
             {
-                Console.WriteLine("⏭️ Certificate Templates already exist. Skipping...");
+                // Update existing Graduation Certificate if needed
+                var gradTemplate = await _context.CertificateTemplates
+                    .FirstOrDefaultAsync(t => t.Name == "Graduation Certificate");
+                
+                if (gradTemplate != null && gradTemplate.TemplateType != "CurriculumCompletion")
+                {
+                    Console.WriteLine("Updating Graduation Certificate template type to CurriculumCompletion...");
+                    gradTemplate.TemplateType = "CurriculumCompletion";
+                    _context.CertificateTemplates.Update(gradTemplate);
+                    await _context.SaveChangesAsync();
+                }
+
+                Console.WriteLine("⏭️ Certificate Templates already exist. Skipping creation...");
                 return;
             }
 
@@ -68,12 +80,12 @@ namespace Fap.Infrastructure.Data.Seed
                     CreatedAt = DateTime.UtcNow
                 },
 
-                // Roadmap Completion Template (Default)
+                // Curriculum Completion Template (Graduation)
                 new CertificateTemplate
                 {
                     Id = Guid.NewGuid(),
                     Name = "Graduation Certificate",
-                    TemplateType = "RoadmapCompletion",
+                    TemplateType = "CurriculumCompletion",
                     Description = "Graduation certificate for completing entire program",
                     TemplateContent = "<html><body><h1>Certificate of Graduation</h1><p>{{StudentName}} has graduated with {{Classification}}</p></body></html>",
                     PageSize = "A4",
