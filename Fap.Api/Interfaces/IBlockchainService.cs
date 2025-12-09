@@ -45,6 +45,7 @@ namespace Fap.Api.Interfaces
             string studentWalletAddress,
             string credentialType,
             string credentialDataJson,
+            string verificationHashBase64,
             ulong expiresAtUnixSeconds);
 
         /// <summary>

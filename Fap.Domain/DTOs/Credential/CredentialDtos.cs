@@ -156,6 +156,7 @@ namespace Fap.Domain.DTOs.Credential
         public string CredentialType { get; set; } = string.Empty;
         public string CredentialDataJson { get; set; } = string.Empty;
         public ulong ExpiresAtUnix { get; set; }
+        public string VerificationHash { get; set; } = string.Empty;
     }
 
     public class SaveCredentialOnChainRequest

@@ -249,10 +249,11 @@ namespace Fap.Api.Services
                     },
                     {
                         'inputs': [
-                            { 'internalType': 'address', 'name': 'studentAddress', 'type': 'address' },
-                            { 'internalType': 'string',  'name': 'credentialType', 'type': 'string' },
-                            { 'internalType': 'string',  'name': 'credentialData', 'type': 'string' },
-                            { 'internalType': 'uint256', 'name': 'expiresAt',      'type': 'uint256' }
+                            { 'internalType': 'address', 'name': 'studentAddress',   'type': 'address' },
+                            { 'internalType': 'string',  'name': 'credentialType',   'type': 'string' },
+                            { 'internalType': 'string',  'name': 'credentialData',   'type': 'string' },
+                            { 'internalType': 'bytes32', 'name': 'verificationHash', 'type': 'bytes32' },
+                            { 'internalType': 'uint256', 'name': 'expiresAt',        'type': 'uint256' }
                         ],
                         'name': 'issueCredential',
                         'outputs': [
@@ -289,14 +290,15 @@ namespace Fap.Api.Services
                         'outputs': [
                             {
                                 'components': [
-                                    { 'internalType': 'uint256', 'name': 'credentialId',    'type': 'uint256' },
-                                    { 'internalType': 'address', 'name': 'studentAddress',  'type': 'address' },
-                                    { 'internalType': 'string',  'name': 'credentialType',  'type': 'string' },
-                                    { 'internalType': 'string',  'name': 'credentialData',  'type': 'string' },
-                                    { 'internalType': 'uint8',   'name': 'status',          'type': 'uint8' },
-                                    { 'internalType': 'address', 'name': 'issuedBy',        'type': 'address' },
-                                    { 'internalType': 'uint256', 'name': 'issuedAt',        'type': 'uint256' },
-                                    { 'internalType': 'uint256', 'name': 'expiresAt',       'type': 'uint256' }
+                                    { 'internalType': 'uint256', 'name': 'credentialId',      'type': 'uint256' },
+                                    { 'internalType': 'address', 'name': 'studentAddress',    'type': 'address' },
+                                    { 'internalType': 'string',  'name': 'credentialType',    'type': 'string' },
+                                    { 'internalType': 'string',  'name': 'credentialData',    'type': 'string' },
+                                    { 'internalType': 'bytes32', 'name': 'verificationHash',  'type': 'bytes32' },
+                                    { 'internalType': 'uint8',   'name': 'status',            'type': 'uint8' },
+                                    { 'internalType': 'address', 'name': 'issuedBy',          'type': 'address' },
+                                    { 'internalType': 'uint256', 'name': 'issuedAt',          'type': 'uint256' },
+                                    { 'internalType': 'uint256', 'name': 'expiresAt',         'type': 'uint256' }
                                 ],
                                 'internalType': 'struct DataTypes.Credential',
                                 'name': '',
@@ -324,6 +326,7 @@ namespace Fap.Api.Services
             string studentWalletAddress,
             string credentialType,
             string credentialDataJson,
+            string verificationHashBase64,
             ulong expiresAtUnixSeconds)
         {
             try
@@ -333,7 +336,15 @@ namespace Fap.Api.Services
                     studentWalletAddress,
                     credentialType);
 
-                // Call issueCredential: (address studentAddress, string credentialType, string credentialData, uint256 expiresAt)
+                // Decode Base64 verification hash to bytes32
+                var hashBytes = Convert.FromBase64String(verificationHashBase64);
+                if (hashBytes.Length != 32)
+                {
+                    throw new InvalidOperationException(
+                        $"verificationHash must be 32 bytes (got {hashBytes.Length})");
+                }
+
+                // Call issueCredential: (address studentAddress, string credentialType, string credentialData, bytes32 verificationHash, uint256 expiresAt)
                 var txHash = await SendTransactionAsync(
                     _settings.CredentialContractAddress,
                     CredentialManagementAbi,
@@ -341,6 +352,7 @@ namespace Fap.Api.Services
                     studentWalletAddress,
                     credentialType,
                     credentialDataJson,
+                    hashBytes,
                     (BigInteger)expiresAtUnixSeconds
                 );
 
@@ -454,7 +466,7 @@ namespace Fap.Api.Services
         }
 
         /// <summary>
-        /// Get credential from blockchain
+        /// Get credential from blockchain using typed DTO decoding
         /// </summary>
         public async Task<CredentialOnChainStructDto> GetCredentialFromChainAsync(long blockchainCredentialId)
         {
@@ -465,13 +477,31 @@ namespace Fap.Api.Services
                     blockchainCredentialId,
                     typeof(CredentialOnChainStructDto).AssemblyQualifiedName);
 
-                var contract = _web3.Eth.GetContract(CredentialManagementAbi, _settings.CredentialContractAddress);
-                var getFunction = contract.GetFunction("getCredential");
-                var callInput = getFunction.CreateCallInput((BigInteger)blockchainCredentialId);
-                var raw = await _web3.Eth.Transactions.Call.SendRequestAsync(callInput);
-                _logger.LogInformation("Raw getCredential output for {BlockchainId}: {Raw}", blockchainCredentialId, raw);
+                var handler = _web3.Eth.GetContractQueryHandler<GetCredentialFunction>();
+                var function = new GetCredentialFunction
+                {
+                    CredentialId = new BigInteger(blockchainCredentialId)
+                };
 
-                var result = DecodeCredentialOutput(raw);
+                var response = await handler
+                    .QueryDeserializingToObjectAsync<GetCredentialFunctionOutput>(
+                        function,
+                        _settings.CredentialContractAddress);
+
+                var result = response.Credential ?? new CredentialOnChainStructDto();
+
+                try
+                {
+                    result.StatusEnum = MapStatus(result.Status);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to map credential status value {Status} to BlockchainCredentialStatus for credential {CredentialId}",
+                        result.Status,
+                        result.CredentialId);
+                }
 
                 _logger.LogInformation(
                     "GetCredentialFromChainAsync DONE. BlockchainId: {BlockchainId}, CredentialId: {CredentialId}, StatusRaw: {StatusRaw}, StatusEnum: {StatusEnum}",
@@ -482,22 +512,12 @@ namespace Fap.Api.Services
 
                 return result;
             }
-            catch (OverflowException overflowEx)
-            {
-                _logger.LogError(
-                    overflowEx,
-                    "Overflow while decoding credential {BlockchainId} from chain. DTO: {DtoType}",
-                    blockchainCredentialId,
-                    typeof(CredentialOnChainStructDto).AssemblyQualifiedName);
-                throw;
-            }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
-                    "Failed to get credential from blockchain. BlockchainId: {BlockchainId}, DTO: {DtoType}",
-                    blockchainCredentialId,
-                    typeof(CredentialOnChainStructDto).AssemblyQualifiedName);
+                    "Failed to get credential from blockchain. BlockchainId: {BlockchainId}",
+                    blockchainCredentialId);
                 throw;
             }
         }
@@ -522,7 +542,7 @@ namespace Fap.Api.Services
 
             try
             {
-                var decodedDto = DecodeCredentialOutput(raw);
+                var decodedDto = await GetCredentialFromChainAsync(blockchainCredentialId);
                 var statusLabel = decodedDto.StatusEnum.ToString();
 
                 var result = new
@@ -534,6 +554,7 @@ namespace Fap.Api.Services
                         studentAddress = decodedDto.StudentAddress,
                         credentialType = decodedDto.CredentialType,
                         credentialData = decodedDto.CredentialData,
+                        verificationHashBase64 = decodedDto.VerificationHashBase64,
                         status = decodedDto.Status,
                         statusName = statusLabel,
                         statusText = statusLabel,
@@ -551,107 +572,6 @@ namespace Fap.Api.Services
                 _logger.LogError(ex, "Failed to decode credential {BlockchainId}. Raw: {Raw}", blockchainCredentialId, raw);
                 return new { message = "Failed to decode output", raw, error = ex.Message };
             }
-        }
-
-        private CredentialOnChainStructDto DecodeCredentialOutput(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw) || raw.Equals("0x", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("Empty output received while decoding credential");
-            }
-
-            var bytes = raw.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
-                ? raw.Substring(2).HexToByteArray()
-                : raw.HexToByteArray();
-
-            const int wordSize = 32;
-
-            static BigInteger ReadUInt256(byte[] source, int byteOffset)
-            {
-                if (byteOffset < 0 || byteOffset + wordSize > source.Length)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(byteOffset), "Offset exceeds source length");
-                }
-
-                var buffer = new byte[wordSize + 1];
-                Array.Copy(source, byteOffset, buffer, 1, wordSize);
-                Array.Reverse(buffer);
-                return new BigInteger(buffer);
-            }
-
-            static string ReadAddress(byte[] source, int byteOffset)
-            {
-                if (byteOffset < 0 || byteOffset + wordSize > source.Length)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(byteOffset), "Offset exceeds source length");
-                }
-
-                var slice = new byte[wordSize];
-                Array.Copy(source, byteOffset, slice, 0, wordSize);
-                var addressBytes = slice.Skip(wordSize - 20).ToArray();
-                return "0x" + BitConverter.ToString(addressBytes).Replace("-", string.Empty).ToLowerInvariant();
-            }
-
-            static int ToSafeInt32(BigInteger value, string fieldName, int max)
-            {
-                if (value < 0 || value > max)
-                {
-                    throw new InvalidOperationException($"Offset for {fieldName} out of range: {value}");
-                }
-
-                return (int)value;
-            }
-
-            static string ReadString(byte[] source, int absoluteOffset)
-            {
-                var lengthValue = ReadUInt256(source, absoluteOffset);
-                var length = ToSafeInt32(lengthValue, "string length", source.Length - absoluteOffset - wordSize);
-                var dataOffset = absoluteOffset + wordSize;
-
-                if (dataOffset < 0 || dataOffset + length > source.Length)
-                {
-                    throw new InvalidOperationException("String data exceeds available payload");
-                }
-
-                return Encoding.UTF8.GetString(source, dataOffset, length);
-            }
-
-            var tupleOffsetValue = ReadUInt256(bytes, 0);
-            var tupleOffset = ToSafeInt32(tupleOffsetValue, "tuple offset", bytes.Length - wordSize);
-
-            BigInteger ReadTupleUInt256(int wordIndex) => ReadUInt256(bytes, tupleOffset + wordIndex * wordSize);
-            string ReadTupleAddress(int wordIndex) => ReadAddress(bytes, tupleOffset + wordIndex * wordSize);
-
-            var credentialIdValue = ReadTupleUInt256(0);
-            var studentAddressValue = ReadTupleAddress(1);
-            var credentialTypeRelativeOffset = ReadTupleUInt256(2);
-            var credentialDataRelativeOffset = ReadTupleUInt256(3);
-            var statusValueRaw = ReadTupleUInt256(4);
-            var issuedByValue = ReadTupleAddress(5);
-            var issuedAtValue = ReadTupleUInt256(6);
-            var expiresAtValue = ReadTupleUInt256(7);
-
-            var credentialTypeOffset = tupleOffset + ToSafeInt32(credentialTypeRelativeOffset, nameof(credentialTypeRelativeOffset), bytes.Length - tupleOffset);
-            var credentialDataOffset = tupleOffset + ToSafeInt32(credentialDataRelativeOffset, nameof(credentialDataRelativeOffset), bytes.Length - tupleOffset);
-
-            var credentialTypeValue = ReadString(bytes, credentialTypeOffset);
-            var credentialDataValue = ReadString(bytes, credentialDataOffset);
-
-            var statusValue = (byte)statusValueRaw;
-            var statusEnum = MapStatus(statusValue);
-
-            return new CredentialOnChainStructDto
-            {
-                CredentialId = credentialIdValue,
-                StudentAddress = studentAddressValue,
-                CredentialType = credentialTypeValue,
-                CredentialData = credentialDataValue,
-                Status = statusValue,
-                StatusEnum = statusEnum,
-                IssuedBy = issuedByValue,
-                IssuedAt = issuedAtValue,
-                ExpiresAt = expiresAtValue
-            };
         }
 
         private static BlockchainCredentialStatus MapStatus(byte statusValue)
@@ -959,19 +879,44 @@ namespace Fap.Api.Services
             [Parameter("string", "credentialData", 4)]
             public string CredentialData { get; set; } = string.Empty;
 
-            [Parameter("uint8", "status", 5)]
+            // New field in smart contract: bytes32 verificationHash
+            // Placed between credentialData and status in the struct
+            [Parameter("bytes32", "verificationHash", 5)]
+            public byte[] VerificationHash { get; set; } = Array.Empty<byte>();
+
+            // Convenience property to expose verification hash as Base64 for logging/diagnostics
+            public string VerificationHashBase64 =>
+                VerificationHash == null || VerificationHash.Length == 0
+                    ? string.Empty
+                    : Convert.ToBase64String(VerificationHash);
+
+            [Parameter("uint8", "status", 6)]
             public byte Status { get; set; }
 
             public BlockchainCredentialStatus StatusEnum { get; set; }
 
-            [Parameter("address", "issuedBy", 6)]
+            [Parameter("address", "issuedBy", 7)]
             public string IssuedBy { get; set; } = string.Empty;
 
-            [Parameter("uint256", "issuedAt", 7)]
+            [Parameter("uint256", "issuedAt", 8)]
             public BigInteger IssuedAt { get; set; }
 
-            [Parameter("uint256", "expiresAt", 8)]
+            [Parameter("uint256", "expiresAt", 9)]
             public BigInteger ExpiresAt { get; set; }
+        }
+
+        [FunctionOutput]
+        public class GetCredentialFunctionOutput : IFunctionOutputDTO
+        {
+            [Parameter("tuple", "", 1)]
+            public CredentialOnChainStructDto Credential { get; set; } = new();
+        }
+
+        [Function("getCredential", typeof(GetCredentialFunctionOutput))]
+        public class GetCredentialFunction : FunctionMessage
+        {
+            [Parameter("uint256", "credentialId", 1)]
+            public BigInteger CredentialId { get; set; }
         }
 
         [Event("CredentialIssued")]

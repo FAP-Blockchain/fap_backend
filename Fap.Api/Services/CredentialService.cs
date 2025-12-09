@@ -6,8 +6,10 @@ using Fap.Domain.DTOs; // For ServiceResult
 using Fap.Domain.Entities;
 using Fap.Domain.Repositories;
 using Fap.Domain.Settings;
+using Fap.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -149,9 +151,8 @@ namespace Fap.Api.Services
 
                 credential.CertificateTemplateId = template.Id;
 
-                // 3. Generate Core Data (Number, Hash)
+                // 3. Generate Core Data (Number)
                 credential.CredentialId = await GenerateCredentialNumberAsync(request.Type);
-                credential.VerificationHash = GenerateVerificationHash(credential.CredentialId, credential.StudentId);
 
                 // 4. Save Initial Credential to get ID
                 await _uow.Credentials.AddAsync(credential);
@@ -196,6 +197,9 @@ namespace Fap.Api.Services
                                 credential.Id);
                         }
 
+                            // After PDF/IPFS info is finalized, compute deterministic verification hash
+                            credential.VerificationHash = GenerateVerificationHash(credential);
+
                         _uow.Credentials.Update(credential);
                         await _uow.SaveChangesAsync();
                     }
@@ -234,7 +238,8 @@ namespace Fap.Api.Services
                         StudentWalletAddress = studentUser.WalletAddress,
                         CredentialType = request.Type,
                         CredentialDataJson = credentialDataJson,
-                        ExpiresAtUnix = 0 // nếu sau này có expiry thì set
+                        ExpiresAtUnix = 0, // nếu sau này có expiry thì set
+                        VerificationHash = credential.VerificationHash ?? string.Empty
                     };
                 }
                 else
@@ -1284,12 +1289,23 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
 
         // ==================== VERIFICATION & SHARING ====================
 
+        /// <summary>
+        /// Metadata JSON structure stored in credentialData on-chain.
+        /// </summary>
+        private sealed class OnChainMetadataDto
+        {
+            public string? cid { get; set; }
+            public string? fileUrl { get; set; }
+            public string? verificationHash { get; set; }
+        }
+
         public async Task<CredentialVerificationDto> VerifyCredentialAsync(VerifyCredentialRequest request)
         {
             try
             {
                 Credential? credential = null;
 
+                // 1. Tìm credential trong DB
                 if (!string.IsNullOrEmpty(request.CredentialNumber))
                 {
                     var credentials = await _uow.Credentials.FindAsync(c => c.CredentialId == request.CredentialNumber);
@@ -1311,6 +1327,7 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
                     };
                 }
 
+                // 2. Check revoke off-chain
                 if (credential.IsRevoked || credential.Status == "Revoked")
                 {
                     return new CredentialVerificationDto
@@ -1322,29 +1339,80 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
                     };
                 }
 
-                bool? onChainValid = null;
-                try
+                bool chainStatusValid = true;
+                bool hashMatches = true;
+                string? failureReason = null;
+
+                // 3. Nếu đã có id on-chain -> đọc struct + metadata để kiểm tra
+                if (credential.BlockchainCredentialId.HasValue)
                 {
-                    if (credential.BlockchainCredentialId.HasValue)
+                    try
                     {
-                        onChainValid = await _blockchainService.VerifyCredentialOnChainAsync(
+                        var onChain = await _blockchainService.GetCredentialFromChainAsync(
                             credential.BlockchainCredentialId.Value
                         );
+
+                        // 3.2. Kiểm tra trạng thái on-chain
+                        if (onChain.StatusEnum == BlockchainCredentialStatus.Revoked ||
+                            onChain.StatusEnum == BlockchainCredentialStatus.Expired)
+                        {
+                            chainStatusValid = false;
+                            failureReason = "On-chain record is revoked or expired.";
+                        }
+                        else
+                        {
+                            // 3.3. Parse credentialData JSON để lấy verificationHash on-chain
+                            OnChainMetadataDto? meta = null;
+                            try
+                            {
+                                if (!string.IsNullOrWhiteSpace(onChain.CredentialData))
+                                {
+                                    meta = JsonSerializer.Deserialize<OnChainMetadataDto>(onChain.CredentialData);
+                                }
+                            }
+                            catch (Exception jsonEx)
+                            {
+                                _logger.LogWarning(jsonEx,
+                                    "Failed to parse on-chain credentialData JSON for credential {CredentialId}",
+                                    credential.Id);
+                            }
+
+                            var onChainHash = meta?.verificationHash;
+
+                            // Nếu contract/FE cũ chưa lưu verificationHash -> bỏ qua bước so khớp hash
+                            if (!string.IsNullOrWhiteSpace(onChainHash))
+                            {
+                                var offChainHash = GenerateVerificationHash(credential);
+
+                                hashMatches = string.Equals(
+                                    offChainHash,
+                                    onChainHash,
+                                    StringComparison.Ordinal);
+
+                                if (!hashMatches)
+                                {
+                                    failureReason = "Data does not match blockchain record (hash mismatch).";
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception chainEx)
+                    {
+                        _logger.LogWarning(chainEx,
+                            "Error verifying credential on-chain for {CredentialId}",
+                            credential.Id);
+                        // Lỗi node/chain: không làm fail cứng, chỉ coi như không kiểm được on-chain
                     }
                 }
-                catch (Exception chainEx)
-                {
-                    _logger.LogWarning(chainEx, "Error verifying credential on-chain for {CredentialId}", credential.Id);
-                }
 
-                var isValid = !onChainValid.HasValue || onChainValid.Value;
+                var isValid = chainStatusValid && hashMatches;
 
                 return new CredentialVerificationDto
                 {
                     IsValid = isValid,
                     Message = isValid
                         ? "Certificate is valid and authentic"
-                        : "On-chain verification failed",
+                        : failureReason ?? "On-chain verification failed",
                     Credential = _mapper.Map<CredentialDto>(credential),
                     VerifiedAt = DateTime.UtcNow
                 };
@@ -1555,6 +1623,33 @@ overallGPA >= 8.0m ? "Second Class Honours (Upper)" :
         private string GenerateVerificationHash(string credentialNumber, Guid studentId)
         {
             var data = $"{credentialNumber}|{studentId}|{DateTime.UtcNow:yyyyMMdd}";
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(data);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
+        }
+
+        /// <summary>
+        /// Deterministically generate a verification hash from core credential data.
+        /// This binds the hash to important fields (IDs, grades, IPFS hash).
+        /// </summary>
+        private string GenerateVerificationHash(Credential credential)
+        {
+            var parts = new[]
+            {
+                credential.CredentialId ?? string.Empty,
+                credential.StudentId.ToString(),
+                credential.CertificateType ?? string.Empty,
+                credential.SubjectId?.ToString() ?? string.Empty,
+                credential.StudentRoadmapId?.ToString() ?? string.Empty,
+                credential.FinalGrade?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty,
+                credential.LetterGrade ?? string.Empty,
+                credential.Classification ?? string.Empty,
+                credential.IPFSHash ?? string.Empty,
+                credential.FileUrl ?? string.Empty
+            };
+
+            var data = string.Join("|", parts);
             using var sha256 = SHA256.Create();
             var bytes = Encoding.UTF8.GetBytes(data);
             var hash = sha256.ComputeHash(bytes);
