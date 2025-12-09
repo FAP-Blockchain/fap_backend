@@ -4,6 +4,7 @@ using Fap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fap.Infrastructure.Migrations
 {
     [DbContext(typeof(FapDbContext))]
-    partial class FapDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209195404_AddAppSettingsTable")]
+    partial class AddAppSettingsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -231,9 +234,6 @@ namespace Fap.Infrastructure.Migrations
 
                     b.Property<int>("MaxEnrollment")
                         .HasColumnType("int");
-
-                    b.Property<long?>("OnChainClassId")
-                        .HasColumnType("bigint");
 
                     b.Property<Guid>("SubjectOfferingId")
                         .HasColumnType("uniqueidentifier");
@@ -604,23 +604,6 @@ namespace Fap.Infrastructure.Migrations
                     b.Property<string>("LetterGrade")
                         .HasMaxLength(5)
                         .HasColumnType("nvarchar(5)");
-
-                    b.Property<long?>("OnChainBlockNumber")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("OnChainChainId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OnChainContractAddress")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal?>("OnChainGradeId")
-                        .HasColumnType("decimal(20,0)");
-
-                    b.Property<string>("OnChainTxHash")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal?>("Score")
                         .HasPrecision(4, 2)
