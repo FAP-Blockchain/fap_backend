@@ -1,5 +1,6 @@
 ﻿using Fap.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Fap.Infrastructure.Data.Seed
 {
@@ -8,6 +9,13 @@ namespace Fap.Infrastructure.Data.Seed
     /// </summary>
     public class SubjectCriteriaSeeder : BaseSeeder
     {
+        private static readonly string[] SoftwareEngineeringPrefixes = { "PRF", "CEA", "PRO", "CSD", "DBI", "PRJ", "SWP", "SWT", "SEP" };
+        private static readonly string[] DatabasePrefixes = { "DBI" };
+        private static readonly string[] WebPrefixes = { "PRJ", "WDU" };
+        private static readonly string[] MathPrefixes = { "MAE", "MAD", "MAS" };
+        private static readonly string[] ComputerSciencePrefixes = { "CSI", "CSD", "PRF", "PRO" };
+        private static readonly string[] DesignPrefixes = { "DRP", "DTG", "DRS", "VCM", "TPG", "DGP", "ANS", "ANC", "GRP" };
+
         public SubjectCriteriaSeeder(FapDbContext context) : base(context) { }
 
         public override async Task SeedAsync()
@@ -71,8 +79,10 @@ namespace Fap.Infrastructure.Data.Seed
 
                 // ==================== SUBJECT-SPECIFIC CRITERIA ====================
 
-                // For Software Engineering subjects (SE101, SE102)
-                if (subject.SubjectCode.StartsWith("SE"))
+                var code = subject.SubjectCode ?? string.Empty;
+
+                // For Software Engineering subjects
+                if (HasPrefix(code, SoftwareEngineeringPrefixes))
                 {
                     // Project requirement
                     criteria.Add(new SubjectCriteria
@@ -99,8 +109,8 @@ namespace Fap.Infrastructure.Data.Seed
                     });
                 }
 
-                // For Database subjects (DB201)
-                if (subject.SubjectCode.StartsWith("DB"))
+                // For Database subjects
+                if (HasPrefix(code, DatabasePrefixes))
                 {
                     // Practical exam requirement
                     criteria.Add(new SubjectCriteria
@@ -127,8 +137,8 @@ namespace Fap.Infrastructure.Data.Seed
                     });
                 }
 
-                // For Web Development subjects (WEB301)
-                if (subject.SubjectCode.StartsWith("WEB"))
+                // For Web Development subjects
+                if (HasPrefix(code, WebPrefixes))
                 {
                     // Final project requirement
                     criteria.Add(new SubjectCriteria
@@ -155,8 +165,8 @@ namespace Fap.Infrastructure.Data.Seed
                     });
                 }
 
-                // For Math subjects (MATH101, MATH201)
-                if (subject.SubjectCode.StartsWith("MATH"))
+                // For Math subjects
+                if (HasPrefix(code, MathPrefixes))
                 {
                     // Midterm requirement
                     criteria.Add(new SubjectCriteria
@@ -183,8 +193,8 @@ namespace Fap.Infrastructure.Data.Seed
                     });
                 }
 
-                // For Computer Science subjects (CS101, CS201)
-                if (subject.SubjectCode.StartsWith("CS"))
+                // For Computer Science subjects
+                if (HasPrefix(code, ComputerSciencePrefixes))
                 {
                     // Programming assignment requirement
                     criteria.Add(new SubjectCriteria
@@ -210,6 +220,31 @@ namespace Fap.Infrastructure.Data.Seed
                         CreatedAt = DateTime.UtcNow
                     });
                 }
+                // For Graphic Design subjects
+                if (HasPrefix(code, DesignPrefixes))
+                {
+                    criteria.Add(new SubjectCriteria
+                    {
+                        Id = Guid.NewGuid(),
+                        SubjectId = subject.Id,
+                        Name = "Portfolio Review",
+                        Description = "Must submit a portfolio piece approved by the studio mentor",
+                        MinScore = 6.0m,
+                        IsMandatory = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+
+                    criteria.Add(new SubjectCriteria
+                    {
+                        Id = Guid.NewGuid(),
+                        SubjectId = subject.Id,
+                        Name = "Studio Critique Participation",
+                        Description = "Participate in at least two critique sessions during the course",
+                        MinScore = 2.0m,
+                        IsMandatory = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
             }
 
             await _context.SubjectCriteria.AddRangeAsync(criteria);
@@ -219,6 +254,16 @@ namespace Fap.Infrastructure.Data.Seed
             Console.WriteLine($"      • Mandatory criteria: {criteria.Count(c => c.IsMandatory)}");
             Console.WriteLine($"      • Recommended criteria: {criteria.Count(c => !c.IsMandatory)}");
             Console.WriteLine($"      • Average per subject: {(criteria.Count / subjects.Count):F1}");
+        }
+
+        private static bool HasPrefix(string subjectCode, params string[] prefixes)
+        {
+            if (string.IsNullOrWhiteSpace(subjectCode) || prefixes == null || prefixes.Length == 0)
+            {
+                return false;
+            }
+
+            return prefixes.Any(p => subjectCode.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

@@ -45,8 +45,7 @@ namespace Fap.Infrastructure.Data.Seed
                     };
                     components.Add(labParent);
 
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Lab 1", WeightPercent = 50, SubjectId = subject.Id, ParentId = labParent.Id });
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Lab 2", WeightPercent = 50, SubjectId = subject.Id, ParentId = labParent.Id });
+                    components.AddRange(CreateChildComponents(labParent, subject.Id, "Lab 1", "Lab 2"));
 
                     // Midterm (30%)
                     components.Add(new GradeComponent
@@ -79,8 +78,7 @@ namespace Fap.Infrastructure.Data.Seed
                     };
                     components.Add(assignParent);
 
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Assignment 1", WeightPercent = 50, SubjectId = subject.Id, ParentId = assignParent.Id });
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Assignment 2", WeightPercent = 50, SubjectId = subject.Id, ParentId = assignParent.Id });
+                    components.AddRange(CreateChildComponents(assignParent, subject.Id, "Assignment 1", "Assignment 2"));
 
                     // Progress Tests (30%) -> PT 1, PT 2
                     var ptParent = new GradeComponent
@@ -92,8 +90,7 @@ namespace Fap.Infrastructure.Data.Seed
                     };
                     components.Add(ptParent);
 
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Progress Test 1", WeightPercent = 50, SubjectId = subject.Id, ParentId = ptParent.Id });
-                    components.Add(new GradeComponent { Id = Guid.NewGuid(), Name = "Progress Test 2", WeightPercent = 50, SubjectId = subject.Id, ParentId = ptParent.Id });
+                    components.AddRange(CreateChildComponents(ptParent, subject.Id, "Progress Test 1", "Progress Test 2"));
 
                     // Final Exam (50%)
                     components.Add(new GradeComponent
@@ -110,6 +107,30 @@ namespace Fap.Infrastructure.Data.Seed
             await SaveAsync("Grade Components");
 
             Console.WriteLine($"   ✅ Created {components.Count} grade components for {subjects.Count} subjects");
+        }
+        private IEnumerable<GradeComponent> CreateChildComponents(GradeComponent parent, Guid subjectId, params string[] childNames)
+        {
+            if (childNames is null || childNames.Length == 0)
+            {
+                yield break;
+            }
+
+            var baseWeight = parent.WeightPercent / childNames.Length;
+            var remainder = parent.WeightPercent % childNames.Length;
+
+            for (var index = 0; index < childNames.Length; index++)
+            {
+                var weight = baseWeight + (index < remainder ? 1 : 0);
+
+                yield return new GradeComponent
+                {
+                    Id = Guid.NewGuid(),
+                    Name = childNames[index],
+                    WeightPercent = weight,
+                    SubjectId = subjectId,
+                    ParentId = parent.Id
+                };
+            }
         }
     }
 }

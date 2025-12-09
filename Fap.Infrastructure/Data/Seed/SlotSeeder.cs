@@ -42,7 +42,10 @@ namespace Fap.Infrastructure.Data.Seed
             [ClassSeeder.DRP101_Winter2025_A] = new ClassSchedule(DayOfWeek.Monday, TimeSlotSeeder.Slot2Id, DayOfWeek.Wednesday, TimeSlotSeeder.Slot2Id),
             [ClassSeeder.DTG102_Winter2025_A] = new ClassSchedule(DayOfWeek.Tuesday, TimeSlotSeeder.Slot5Id, DayOfWeek.Thursday, TimeSlotSeeder.Slot5Id),
             [ClassSeeder.DRS102_Spring2026_A] = new ClassSchedule(DayOfWeek.Monday, TimeSlotSeeder.Slot2Id, DayOfWeek.Wednesday, TimeSlotSeeder.Slot2Id),
-            [ClassSeeder.VCM202_Spring2026_A] = new ClassSchedule(DayOfWeek.Tuesday, TimeSlotSeeder.Slot5Id, DayOfWeek.Thursday, TimeSlotSeeder.Slot5Id)
+            [ClassSeeder.VCM202_Spring2026_A] = new ClassSchedule(DayOfWeek.Tuesday, TimeSlotSeeder.Slot5Id, DayOfWeek.Thursday, TimeSlotSeeder.Slot5Id),
+
+            [ClassSeeder.SWT301_Winter2026_A] = new ClassSchedule(DayOfWeek.Monday, TimeSlotSeeder.Slot4Id, DayOfWeek.Wednesday, TimeSlotSeeder.Slot4Id),
+            [ClassSeeder.SEP490_Spring2027_A] = new ClassSchedule(DayOfWeek.Tuesday, TimeSlotSeeder.Slot6Id, DayOfWeek.Friday, TimeSlotSeeder.Slot6Id)
         };
 
         public SlotSeeder(FapDbContext context) : base(context) { }

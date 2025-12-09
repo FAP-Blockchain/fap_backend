@@ -87,8 +87,9 @@ namespace Fap.Infrastructure.Data.Seed
                     UserId = UserSeeder.Student1UserId,
                     StudentCode = "SE150001",
                     EnrollmentDate = new DateTime(2022, 9, 1),
-                    GPA = 3.75m,
-                    IsGraduated = false,
+                    GPA = 3.85m,
+                    IsGraduated = true,
+                    GraduationDate = new DateTime(2027, 6, 30),
                     CurriculumId = 1  // Software Engineering 2024
                 },
                 new Student

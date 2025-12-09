@@ -85,10 +85,9 @@ namespace Fap.Infrastructure.Data.Seed
             var roll = random.Next(100);
 
             if (roll < 20) return "Excellent";      // 20%
-            else if (roll < 50) return "Good";       // 30%
-            else if (roll < 80) return "Average";    // 30%
-            else if (roll < 95) return "BelowAverage"; // 15%
-            else return "Poor";// 5%
+            else if (roll < 55) return "Good";       // 35%
+            else if (roll < 85) return "Average";    // 30%
+            else return "NeedsSupport";              // 15% - still passing
         }
 
         private decimal GenerateScore(string performanceLevel, string componentName, Random random)
@@ -97,11 +96,10 @@ namespace Fap.Infrastructure.Data.Seed
             var (minScore, maxScore) = performanceLevel switch
             {
                 "Excellent" => (8.5m, 10.0m),
-                "Good" => (7.0m, 8.5m),
-                "Average" => (5.5m, 7.0m),
-                "BelowAverage" => (4.0m, 5.5m),
-                "Poor" => (0.0m, 4.0m),
-                _ => (5.0m, 7.0m)
+                "Good" => (7.0m, 8.8m),
+                "Average" => (6.0m, 7.5m),
+                "NeedsSupport" => (5.0m, 6.2m),
+                _ => (6.0m, 7.5m)
             };
 
             // Adjust for component difficulty
@@ -118,8 +116,8 @@ namespace Fap.Infrastructure.Data.Seed
             var randomValue = (decimal)random.NextDouble() * range;
             var score = minScore + randomValue + adjustment;
 
-            // Clamp between 0 and 10
-            score = Math.Max(0, Math.Min(10, score));
+            // Clamp between 5 (pass) and 10
+            score = Math.Max(5.0m, Math.Min(10m, score));
 
             // Round to 1 decimal place
             return Math.Round(score, 1);
