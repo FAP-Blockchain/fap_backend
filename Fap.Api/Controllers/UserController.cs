@@ -213,5 +213,31 @@ namespace Fap.Api.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating user blockchain info" });
             }
         }
+
+        /// <summary>
+        /// POST /api/users/{id}/wallet/on-chain - Persist user's on-chain wallet update (Admin only)
+        /// </summary>
+        [HttpPost("~/api/users/{id}/wallet/on-chain")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUserWalletOnChain(Guid id, [FromBody] UpdateUserWalletOnChainRequest request)
+        {
+            try
+            {
+                var performedByUserId = User.GetRequiredUserId();
+                var result = await _userService.UpdateUserWalletOnChainAsync(id, request, performedByUserId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating wallet on-chain for user {UserId}", id);
+                return StatusCode(500, new { message = "An error occurred while updating user wallet on-chain" });
+            }
+        }
     }
 }

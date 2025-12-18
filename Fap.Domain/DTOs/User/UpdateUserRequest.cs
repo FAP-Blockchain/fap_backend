@@ -15,6 +15,10 @@ namespace Fap.Domain.DTOs.User
 
         public string? RoleName { get; set; } // Admin, Teacher, Student
 
+        // Blockchain wallet address (optional)
+        [MaxLength(42)]
+        public string? WalletAddress { get; set; }
+
         // Student fields
         [MaxLength(30)]
         public string? StudentCode { get; set; }

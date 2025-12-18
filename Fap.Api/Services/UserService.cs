@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Identity;
 using Nethereum.RPC.Eth.DTOs;
 using System.Text.Json;
 using System.Globalization;
+using Fap.Domain.Settings;
+using Microsoft.Extensions.Options;
+using Nethereum.Util;
 
 namespace Fap.Api.Services
 {
@@ -24,6 +27,7 @@ namespace Fap.Api.Services
         private readonly ICloudStorageService _cloudStorageService;
         private readonly IBlockchainService _blockchain;
         private readonly FapDbContext _db;
+        private readonly BlockchainSettings _blockchainSettings;
         private readonly PasswordHasher<User> _hasher = new();
 
         public UserService(
@@ -32,7 +36,8 @@ namespace Fap.Api.Services
             ILogger<UserService> logger,
             ICloudStorageService cloudStorageService,
             IBlockchainService blockchain,
-            FapDbContext db)
+            FapDbContext db,
+            IOptions<BlockchainSettings> blockchainSettings)
         {
             _uow = uow;
             _mapper = mapper;
@@ -40,6 +45,7 @@ namespace Fap.Api.Services
             _cloudStorageService = cloudStorageService;
             _blockchain = blockchain;
             _db = db;
+            _blockchainSettings = blockchainSettings.Value;
         }
 
         public async Task<PagedResult<UserResponse>> GetUsersAsync(GetUsersRequest request)
@@ -125,6 +131,11 @@ namespace Fap.Api.Services
                         return response;
                     }
                     user.Email = request.Email;
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.WalletAddress))
+                {
+                    user.WalletAddress = request.WalletAddress.Trim();
                 }
 
                 // 3. Update role if changed
@@ -527,6 +538,228 @@ namespace Fap.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating blockchain info for user {UserId}", userId);
+                response.Errors.Add($"Internal error: {ex.Message}");
+                response.Message = "Update failed";
+                return response;
+            }
+        }
+
+        private static string DecodeAddressFromAbiWord(string word64)
+        {
+            // ABI word is 32 bytes (64 hex). Address is last 20 bytes (40 hex)
+            if (string.IsNullOrWhiteSpace(word64) || word64.Length < 40)
+            {
+                return string.Empty;
+            }
+
+            var addr = word64[^40..];
+            return "0x" + addr.ToLowerInvariant();
+        }
+
+        private static bool IsLikelyHexAddress(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            var v = value.Trim();
+            if (!v.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) return false;
+            if (v.Length != 42) return false;
+            return true;
+        }
+
+        public async Task<UpdateUserResponse> UpdateUserWalletOnChainAsync(Guid userId, UpdateUserWalletOnChainRequest request, Guid performedByUserId)
+        {
+            var response = new UpdateUserResponse
+            {
+                UserId = userId
+            };
+
+            try
+            {
+                var user = await _uow.Users.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    response.Errors.Add($"User with ID {userId} not found");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                if (string.IsNullOrWhiteSpace(request.TransactionHash))
+                {
+                    response.Errors.Add("TransactionHash is required");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var contractAddress = _blockchainSettings.Contracts?.UniversityManagement;
+                if (string.IsNullOrWhiteSpace(contractAddress))
+                {
+                    response.Errors.Add("UniversityManagement contract address is not configured (BlockchainSettings.Contracts.UniversityManagement)");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var oldWallet = user.WalletAddress;
+                if (!IsLikelyHexAddress(oldWallet))
+                {
+                    response.Errors.Add("User does not have a valid existing walletAddress to update");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var txHash = request.TransactionHash.Trim();
+
+                // 1) Fetch receipt and tx
+                var receipt = await _blockchain.WaitForTransactionReceiptAsync(txHash, timeoutSeconds: 120);
+                var blockNumber = receipt.BlockNumber?.Value;
+                if (blockNumber == null)
+                {
+                    response.Errors.Add("Receipt did not include BlockNumber");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var web3 = _blockchain.GetWeb3();
+                var tx = await web3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(txHash);
+                if (tx == null)
+                {
+                    response.Errors.Add("Transaction not found on chain");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                // 2) Validate tx targets UniversityManagement
+                if (!string.Equals(tx.To ?? string.Empty, contractAddress, StringComparison.OrdinalIgnoreCase))
+                {
+                    response.Errors.Add("Transaction was not sent to UniversityManagement contract");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                // 3) Validate tx input is updateUserAddress(old,new)
+                var input = tx.Input ?? string.Empty;
+                if (!input.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || input.Length < 10 + 64 * 2)
+                {
+                    response.Errors.Add("Transaction input is invalid");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var expectedSelector = new Sha3Keccack().CalculateHash("updateUserAddress(address,address)")[..8];
+                var actualSelector = input[2..10];
+                if (!string.Equals(actualSelector, expectedSelector, StringComparison.OrdinalIgnoreCase))
+                {
+                    response.Errors.Add("Transaction is not calling updateUserAddress(address,address)");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                var payload = input[10..];
+                var word1 = payload[..64];
+                var word2 = payload[64..128];
+
+                var decodedOld = DecodeAddressFromAbiWord(word1);
+                var decodedNew = DecodeAddressFromAbiWord(word2);
+
+                if (!IsLikelyHexAddress(decodedNew))
+                {
+                    response.Errors.Add("Decoded new wallet address is invalid");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                if (!string.Equals(decodedOld, oldWallet, StringComparison.OrdinalIgnoreCase))
+                {
+                    response.Errors.Add("Decoded old wallet address does not match user's current walletAddress");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                if (string.Equals(decodedOld, decodedNew, StringComparison.OrdinalIgnoreCase))
+                {
+                    response.Errors.Add("New wallet address must be different from old wallet address");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                // 4) Validate on-chain state updated: userIdToAddress(userIdString) == newAddress
+                const string UniversityManagementUserIdToAddressAbi = "[{ 'inputs':[{'internalType':'string','name':'','type':'string'}], 'name':'userIdToAddress', 'outputs':[{'internalType':'address','name':'','type':'address'}], 'stateMutability':'view', 'type':'function' }]";
+                var contract = web3.Eth.GetContract(UniversityManagementUserIdToAddressAbi, contractAddress);
+                var fn = contract.GetFunction("userIdToAddress");
+
+                var userIdString = userId.ToString();
+                var onchainAddress = await fn.CallAsync<string>(userIdString);
+                if (!string.Equals(onchainAddress ?? string.Empty, decodedNew, StringComparison.OrdinalIgnoreCase))
+                {
+                    response.Errors.Add("On-chain state does not reflect the new wallet address for this userId");
+                    response.Message = "Update failed";
+                    return response;
+                }
+
+                // 5) Update DB + audit
+                DateTime? blockUtc = null;
+                try
+                {
+                    var block = await web3.Eth.Blocks
+                        .GetBlockWithTransactionsByNumber
+                        .SendRequestAsync(new BlockParameter(receipt.BlockNumber));
+                    if (block?.Timestamp?.Value != null)
+                    {
+                        var unixSeconds = (long)block.Timestamp.Value;
+                        blockUtc = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not resolve block timestamp for wallet update TxHash={TxHash}", txHash);
+                }
+
+                user.WalletAddress = decodedNew;
+                user.BlockchainTxHash = txHash;
+                user.BlockNumber = (long)blockNumber;
+                user.BlockchainRegisteredAt = blockUtc ?? DateTime.UtcNow;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                _uow.Users.Update(user);
+                await _uow.SaveChangesAsync();
+
+                var detail = JsonSerializer.Serialize(new
+                {
+                    targetUserId = userId,
+                    oldWalletAddress = decodedOld,
+                    newWalletAddress = decodedNew,
+                    contractAddress,
+                    transactionHash = txHash
+                });
+
+                if (detail.Length > 500)
+                {
+                    detail = detail.Substring(0, 500);
+                }
+
+                _db.ActionLogs.Add(new ActionLog
+                {
+                    Id = Guid.NewGuid(),
+                    CreatedAt = DateTime.UtcNow,
+                    Action = "USER_WALLET_ONCHAIN_UPDATE",
+                    Detail = detail,
+                    UserId = performedByUserId,
+                    TransactionHash = txHash,
+                    BlockNumber = (long)blockNumber,
+                    EventName = "UserWalletUpdated",
+                    TxFrom = tx.From,
+                    TxTo = tx.To,
+                    ContractAddress = contractAddress,
+                    CredentialId = null
+                });
+
+                await _db.SaveChangesAsync();
+
+                response.Success = true;
+                response.Message = "User wallet address updated successfully";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating wallet on-chain for user {UserId}", userId);
                 response.Errors.Add($"Internal error: {ex.Message}");
                 response.Message = "Update failed";
                 return response;
