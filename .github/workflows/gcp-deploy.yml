@@ -81,5 +81,15 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Submit Cloud Build
+        shell: bash
         run: |
-          gcloud --quiet builds submit --config cloudbuild.yaml .
+          set -euo pipefail
+          BUILD_ARGS=(--quiet builds submit --config cloudbuild.yaml .)
+
+          # Force the build execution identity when available.
+          # This avoids builds running under the default compute service account.
+          if [ -n "${GCP_SERVICE_ACCOUNT:-}" ]; then
+            BUILD_ARGS+=(--service-account="${GCP_SERVICE_ACCOUNT}")
+          fi
+
+          gcloud "${BUILD_ARGS[@]}"
