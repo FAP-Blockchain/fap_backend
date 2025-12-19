@@ -89,7 +89,22 @@ jobs:
           # Force the build execution identity when available.
           # This avoids builds running under the default compute service account.
           if [ -n "${GCP_SERVICE_ACCOUNT:-}" ]; then
-            BUILD_ARGS+=(--service-account="${GCP_SERVICE_ACCOUNT}")
+            SA_INPUT="${GCP_SERVICE_ACCOUNT}"
+
+            # gcloud expects: projects/<project>/serviceAccounts/<service_account>
+            if [[ "$SA_INPUT" == projects/*/serviceAccounts/* ]]; then
+              SA_RESOURCE="$SA_INPUT"
+            else
+              PROJECT_ID="$(gcloud config get-value project 2>/dev/null || true)"
+              if [ -z "$PROJECT_ID" ]; then
+                echo "ERROR: gcloud project is not set; cannot build service account resource name."
+                echo "Fix: run 'gcloud config set project <PROJECT_ID>' or set SA as full resource 'projects/<project>/serviceAccounts/<email>'."
+                exit 1
+              fi
+              SA_RESOURCE="projects/${PROJECT_ID}/serviceAccounts/${SA_INPUT}"
+            fi
+
+            BUILD_ARGS+=(--service-account="$SA_RESOURCE")
           fi
 
           gcloud "${BUILD_ARGS[@]}"
