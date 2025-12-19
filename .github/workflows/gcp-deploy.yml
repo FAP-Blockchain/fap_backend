@@ -25,6 +25,11 @@ jobs:
     name: Build & Deploy (Cloud Build -> Cloud Run)
     runs-on: ubuntu-latest
 
+    env:
+      GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      GCP_CREDENTIALS_JSON: ${{ secrets.GCP_CREDENTIALS_JSON }}
+
     permissions:
       contents: read
       id-token: write
@@ -36,9 +41,9 @@ jobs:
       - name: Validate Google Cloud auth secrets
         shell: bash
         run: |
-          WIF_PROVIDER='${{ secrets.GCP_WIF_PROVIDER }}'
-          WIF_SA='${{ secrets.GCP_SERVICE_ACCOUNT }}'
-          CREDS_JSON='${{ secrets.GCP_CREDENTIALS_JSON }}'
+          WIF_PROVIDER="$GCP_WIF_PROVIDER"
+          WIF_SA="$GCP_SERVICE_ACCOUNT"
+          CREDS_JSON="$GCP_CREDENTIALS_JSON"
 
           if [ -n "$WIF_PROVIDER" ] && [ -n "$CREDS_JSON" ]; then
             echo "ERROR: Configure exactly one auth method: either GCP_WIF_PROVIDER (+ GCP_SERVICE_ACCOUNT) OR GCP_CREDENTIALS_JSON."
@@ -60,17 +65,17 @@ jobs:
           echo "Auth secrets look OK."
 
       - name: Authenticate to Google Cloud (Workload Identity Federation)
-        if: ${{ secrets.GCP_WIF_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' }}
+        if: ${{ env.GCP_WIF_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: Authenticate to Google Cloud (Credentials JSON)
-        if: ${{ secrets.GCP_CREDENTIALS_JSON != '' }}
+        if: ${{ env.GCP_CREDENTIALS_JSON != '' }}
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          credentials_json: ${{ env.GCP_CREDENTIALS_JSON }}
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
