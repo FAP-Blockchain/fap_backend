@@ -6,6 +6,7 @@ namespace Fap.Domain.Repositories
     public interface IUnitOfWork : IDisposable
     {
         IUserRepository Users { get; }
+        IActionLogRepository ActionLogs { get; }
         IRefreshTokenRepository RefreshTokens { get; }
         IStudentRepository Students { get; }
         ITeacherRepository Teachers { get; }

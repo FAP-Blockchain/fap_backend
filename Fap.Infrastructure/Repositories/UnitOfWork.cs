@@ -8,6 +8,7 @@ namespace Fap.Infrastructure.Repositories
         private readonly FapDbContext _context;
 
         public IUserRepository Users { get; }
+        public IActionLogRepository ActionLogs { get; }
         public IRefreshTokenRepository RefreshTokens { get; }
         public IStudentRepository Students { get; }
         public ITeacherRepository Teachers { get; }
@@ -39,6 +40,7 @@ namespace Fap.Infrastructure.Repositories
         {
             _context = context;
             Users = new UserRepository(context);
+            ActionLogs = new ActionLogRepository(context);
             RefreshTokens = new RefreshTokenRepository(context);
             Students = new StudentRepository(context);
             Teachers = new TeacherRepository(context);

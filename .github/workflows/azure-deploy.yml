@@ -1,12 +1,18 @@
 ﻿name: Deploy UAP API to Azure with DB Migrations
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: uap-blockchain    
   DOTNET_VERSION: '8.0.x'
   PROJECT_PATH: './Fap.Api/Fap.Api.csproj'
+
+concurrency:
+  group: azure-deploy-main
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:

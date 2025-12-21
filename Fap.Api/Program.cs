@@ -96,6 +96,7 @@ builder.Services.AddScoped<IGradeRepository, GradeRepository>();
 builder.Services.AddScoped<IGradeComponentRepository, GradeComponentRepository>();
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Application settings and services
@@ -136,6 +137,7 @@ builder.Services.AddScoped<ICloudStorageService, CloudinaryStorageService>();
 builder.Services.AddScoped<ISubjectOfferingService, SubjectOfferingService>();
 builder.Services.AddScoped<ISpecializationService, SpecializationService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
+builder.Services.AddScoped<IActionLogService, ActionLogService>();
 
 // AutoMapper profiles
 builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
